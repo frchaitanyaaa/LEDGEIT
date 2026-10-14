@@ -1,0 +1,5 @@
+httpx==0.28.1
+numpy>=1.26
+scipy>=1.11
+pillow==11.0.0
+imagehash==4.3.1

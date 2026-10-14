@@ -1,0 +1,16 @@
+{
+  "models": [
+    {"name": "ledgeit-defect-stub", "version": "1.0.0", "backend": "stub", "file": "stub-1.0.0.json",
+     "framework": "numpy-scipy", "dataset_version": "synthetic-steel-v1", "training_date": null,
+     "metrics": {"note": "heuristic baseline"}},
+    {"name": "ledgeit-defect-stub", "version": "1.1.0", "backend": "stub", "file": "stub-1.1.0.json",
+     "framework": "numpy-scipy", "dataset_version": "synthetic-steel-v1", "training_date": null,
+     "metrics": {"note": "heuristic baseline, more sensitive"}},
+    {"name": "ledgeit-defect-yolo", "version": "1.0.0", "backend": "yolo", "file": "yolov8n-neu-1.0.0.pt",
+     "framework": "ultralytics-8.x", "dataset_version": "neu-det-v1", "training_date": null,
+     "metrics": {}},
+    {"name": "ledgeit-defect-yolo", "version": "1.1.0", "backend": "yolo", "file": "yolov8s-neu-1.1.0.pt",
+     "framework": "ultralytics-8.x", "dataset_version": "neu-det-v1", "training_date": null,
+     "metrics": {}}
+  ]
+}

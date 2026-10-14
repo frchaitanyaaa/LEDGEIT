@@ -52,10 +52,26 @@ services:
     build: { context: .., dockerfile: apps/api/Dockerfile }
     environment: *app-env
     ports: ["8000:8000"]
-    volumes: ["../contracts/deployments:/app/contracts/deployments"]
+    volumes:
+      - ../contracts/deployments:/app/contracts/deployments
+      - ../services/edge-simulator/keys:/app/services/edge-simulator/keys
+      - ../services/ai-inspector/models:/app/services/ai-inspector/models:ro
     depends_on:
       postgres: { condition: service_healthy }
       minio-init: { condition: service_completed_successfully }
+
+  ai-inspector:
+    build: { context: .., dockerfile: services/ai-inspector/Dockerfile }
+    environment: { MODEL_BACKEND: "${MODEL_BACKEND:-stub}" }
+    ports: ["8001:8001"]
+    volumes: ["../services/ai-inspector/models:/svc/models"]
+
+  edge-simulator:
+    build: { context: .., dockerfile: services/edge-simulator/Dockerfile }
+    profiles: ["demo"]
+    environment: { API_URL: "http://api:8000", AI_INSPECTOR_URL: "http://ai-inspector:8001" }
+    volumes: ["../services/edge-simulator/keys:/app/services/edge-simulator/keys:ro"]
+    depends_on: [api, ai-inspector]
 
 volumes:
   pgdata:

@@ -73,7 +73,37 @@ def ensure_device(conn: Connection, code: str, line_id: str, public_key: str) ->
     ), {"l": line_id, "c": code, "k": public_key}).scalar_one()
 
 
-def seed(conn: Connection, keys_dir: Path = KEYS_DIR) -> dict:
+MANIFEST = REPO_ROOT / "services" / "ai-inspector" / "models" / "manifest.json"
+AUTO_APPROVE = {("ledgeit-defect-stub", "1.0.0")}  # 1.1.0 stays DRAFT so the approval flow can be demoed
+
+
+def seed_models(conn: Connection, manifest: Path = MANIFEST) -> list[str]:
+    """Register every model in the AI inspector manifest whose weights file exists."""
+    import hashlib
+
+    entries = json.loads(manifest.read_text())["models"]
+    admin = conn.execute(text("SELECT id FROM users WHERE role='ADMIN' ORDER BY created_at LIMIT 1")).scalar()
+    qm = conn.execute(text("SELECT id FROM users WHERE role='QUALITY_MANAGER' ORDER BY created_at LIMIT 1")).scalar()
+    out = []
+    for e in entries:
+        f = manifest.parent / e["file"]
+        if not f.exists():
+            continue
+        h = hashlib.sha256(f.read_bytes()).hexdigest()
+        approve = (e["name"], e["version"]) in AUTO_APPROVE
+        now = datetime.now(timezone.utc)
+        conn.execute(text(
+            "INSERT INTO ai_models(name, version, weights_sha256, framework, dataset_version, training_date, metrics, "
+            "status, registered_by, approved_by, approved_at, deployed_at) VALUES (:n, :v, :w, :f, :d, :t, "
+            "CAST(:m AS jsonb), CAST(:s AS model_status_t), :rb, :ab, :at, :at) ON CONFLICT (name, version) DO NOTHING"
+        ), {"n": e["name"], "v": e["version"], "w": h, "f": e["framework"], "d": e["dataset_version"],
+            "t": e.get("training_date"), "m": json.dumps(e.get("metrics", {})), "s": "APPROVED" if approve else "DRAFT",
+            "rb": admin, "ab": qm if approve else None, "at": now if approve else None})
+        out.append(f"{e['name']}@{e['version']}")
+    return out
+
+
+def seed(conn: Connection, keys_dir: Path = KEYS_DIR, models: bool = True) -> dict:
     plant_id = conn.execute(text("SELECT id::text FROM plants WHERE name='Pune Works'")).scalar()
     if not plant_id:
         plant_id = conn.execute(text(
@@ -97,13 +127,15 @@ def seed(conn: Connection, keys_dir: Path = KEYS_DIR) -> dict:
             "INSERT INTO users(employee_code, full_name, email, password_hash, role) "
             "VALUES (:c, :n, :e, :p, CAST(:r AS user_role)) ON CONFLICT (employee_code) DO NOTHING"
         ), {"c": ecode, "n": name, "e": email, "p": pw, "r": role})
-    return {"plant_id": plant_id, "lines": line_ids}
+    model_ids = seed_models(conn) if models else []
+    return {"plant_id": plant_id, "lines": line_ids, "models": model_ids}
 
 
 def main() -> None:
     with get_engine().begin() as conn:
         out = seed(conn)
-    print(f"seeded plant {out['plant_id']} lines {list(out['lines'])}; demo password: {DEMO_PASSWORD}")
+    print(f"seeded plant {out['plant_id']} lines {list(out['lines'])} models {out['models']}")
+    print(f"demo password for all users: {DEMO_PASSWORD}")
     for _, _, email, role in USERS:
         print(f"  {role:<17} {email}")
 

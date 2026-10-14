@@ -15,7 +15,7 @@ install-py: ## Python venv + packages
 	test -d .venv || python3 -m venv .venv
 	$(PIP) install -q --upgrade pip
 	$(PIP) install -q -e packages/proof-core/python -r apps/api/requirements.txt -r apps/api/requirements-dev.txt
-	$(PIP) install -q -e apps/api
+	$(PIP) install -q -e apps/api -r services/ai-inspector/requirements.txt -e services/edge-simulator
 
 install-js: ## npm deps for proof-core TS and contracts
 	npm ci --prefix packages/proof-core/ts
@@ -25,6 +25,7 @@ test: test-py test-ts test-contracts ## Run all test suites
 
 test-py: ## Python tests (needs Postgres, see TEST_DATABASE_URL)
 	$(PY) -m pytest -q packages/proof-core/python apps/api
+	cd services/ai-inspector && ../../$(PY) -m pytest -q
 
 test-ts:
 	cd packages/proof-core/ts && npx vitest run

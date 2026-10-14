@@ -10,6 +10,7 @@ from .chain import (
 )
 from .hashing import hash_json, sha256_hex
 from .merkle import MerkleTree, build_tree, leaf_hash, verify_proof
+from .record import build_inspection_record
 from .signing import (
     KeyPair,
     generate_keypair,
@@ -25,6 +26,7 @@ __all__ = [
     "ChainIssue",
     "KeyPair",
     "MerkleTree",
+    "build_inspection_record",
     "build_tree",
     "canonicalize",
     "compute_event_hash",

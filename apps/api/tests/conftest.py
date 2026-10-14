@@ -102,3 +102,44 @@ def auth(client, seeded):
         return login(client, f"{role}@ledgeit.dev")
 
     return _auth
+
+
+# ---------------- end-to-end helpers: in-process AI inspector + edge device ----------------
+import sys  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "services" / "ai-inspector"))
+
+
+@pytest.fixture(scope="session")
+def ai_client():
+    from fastapi.testclient import TestClient
+
+    from app.main import app as ai_app  # services/ai-inspector
+
+    return TestClient(ai_app)
+
+
+@pytest.fixture
+def make_device(client, ai_client, seeded, keys_dir):
+    import json as _json
+
+    from simulator.device import EdgeDevice, http_infer
+
+    def _make(code: str = "CAM-A-01") -> EdgeDevice:
+        key = _json.loads((keys_dir / f"{code}.json").read_text())
+        d = EdgeDevice(code=code, seed_b64=key["seed_b64"], api=client, infer=http_infer(ai_client))
+        d.sync_head()
+        return d
+
+    return _make
+
+
+@pytest.fixture
+def frame():
+    from simulator.synth import generate
+
+    def _frame(i: int, defect_rate: float = 0.35) -> tuple[bytes, str | None]:
+        s = generate(i, defect_rate=defect_rate)
+        return s.jpeg, s.truth
+
+    return _frame
