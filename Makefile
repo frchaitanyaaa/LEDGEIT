@@ -17,11 +17,12 @@ install-py: ## Python venv + packages
 	$(PIP) install -q -e packages/proof-core/python -r apps/api/requirements.txt -r apps/api/requirements-dev.txt
 	$(PIP) install -q -e apps/api -r services/ai-inspector/requirements.txt -e services/edge-simulator
 
-install-js: ## npm deps for proof-core TS and contracts
+install-js: ## npm deps for proof-core TS, contracts and web
 	npm ci --prefix packages/proof-core/ts
 	npm ci --prefix contracts
+	npm ci --prefix apps/web
 
-test: test-py test-ts test-contracts ## Run all test suites
+test: test-py test-ts test-contracts test-web ## Run all test suites
 
 test-py: ## Python tests (needs Postgres, see TEST_DATABASE_URL)
 	$(PY) -m pytest -q packages/proof-core/python apps/api
@@ -72,3 +73,6 @@ dev-status:
 
 worker: ## Anchor everything pending right now (one tick, flush all windows)
 	$(PY) -m ledgeit_api.anchoring.run --once --flush
+
+test-web:
+	cd apps/web && npx vitest run && npx tsc -b --noEmit

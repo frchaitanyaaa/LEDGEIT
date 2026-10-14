@@ -67,3 +67,15 @@ jobs:
       - run: pip install -e packages/proof-core/python -r services/ai-inspector/requirements.txt -e services/edge-simulator pytest ruff
       - run: ruff check services
       - run: cd services/ai-inspector && pytest -q
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm ci --prefix packages/proof-core/ts
+      - run: npm ci --prefix apps/web
+      - run: npm run lint --prefix apps/web
+      - run: cd apps/web && npx vitest run
+      - run: cd apps/web && npx vite build
