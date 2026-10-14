@@ -1,0 +1,73 @@
+{
+  "description": "Per-line hash chain. genesis = SHA256('LEDGEIT-GENESIS-v1:' + line)",
+  "line": "LINE-A",
+  "genesis": "a69f1b4d0f562661ac0a0513e369d36e5ae45334343140171a9f10ffed72092c",
+  "events": [
+    {
+      "seq": 1,
+      "event_type": "INSPECTED",
+      "actor_type": "DEVICE",
+      "actor_id": "CAM-A-01",
+      "payload": {
+        "inspection_id": "11111111-1111-4111-8111-111111111111",
+        "decision": "FAIL"
+      },
+      "payload_hash": "97c6f38e2caf7d65d82ae2c54de1438d8671886fc0b93964f2a340f23a1d1ce7",
+      "prev_event_hash": "a69f1b4d0f562661ac0a0513e369d36e5ae45334343140171a9f10ffed72092c",
+      "event_hash": "2c857fa5f7b683c985ad929485ecb757bc776af4df918f72d7c5b4e46bbc2363",
+      "created_at": "2026-10-20T10:31:01.120Z"
+    },
+    {
+      "seq": 2,
+      "event_type": "EVIDENCE_HASHED",
+      "actor_type": "DEVICE",
+      "actor_id": "CAM-A-01",
+      "payload": {
+        "evidence_sha256": "0cf457e24a479f02fd4d34540389f720f0807dcff92a7562108165b2637ea82f"
+      },
+      "payload_hash": "09ffb5d6d77302db1f406d7ed677e1221cb0572a07a8d3a987ce3ce8f0f81e8b",
+      "prev_event_hash": "2c857fa5f7b683c985ad929485ecb757bc776af4df918f72d7c5b4e46bbc2363",
+      "event_hash": "79ab443dd08030a4c7c90005e895b4e2f4d9c12020941f68827c7c0cb2bcfdc2",
+      "created_at": "2026-10-20T10:31:02.120Z"
+    },
+    {
+      "seq": 3,
+      "event_type": "RECORD_CREATED",
+      "actor_type": "DEVICE",
+      "actor_id": "CAM-A-01",
+      "payload": {
+        "record_hash": "b7462d6ced2c15add3dbe47755277fa9618aceb17c68f507128896d622d4c5ee"
+      },
+      "payload_hash": "eb968c0c6c8fc628e2a53f6aafab61dc4ebdd05909414295b68bdc97b989fb42",
+      "prev_event_hash": "79ab443dd08030a4c7c90005e895b4e2f4d9c12020941f68827c7c0cb2bcfdc2",
+      "event_hash": "d2bf7bce0124ffde8a30706b1c92b88ba4ecce2355ee8c3e5c6522c8679028c3",
+      "created_at": "2026-10-20T10:31:03.120Z"
+    },
+    {
+      "seq": 4,
+      "event_type": "OVERRIDDEN",
+      "actor_type": "USER",
+      "actor_id": "QE-0042",
+      "payload": {
+        "reason_code": "FALSE_POSITIVE"
+      },
+      "payload_hash": "a96dd4a5e36ba0287086d5e632732b7d1199b39659fa2045fea68ed582ecc520",
+      "prev_event_hash": "d2bf7bce0124ffde8a30706b1c92b88ba4ecce2355ee8c3e5c6522c8679028c3",
+      "event_hash": "b0eae2e370831a7eaae9138bc4497d7ed6d19e3bdf6c8f78cefee00bc5c2101d",
+      "created_at": "2026-10-20T10:31:04.120Z"
+    },
+    {
+      "seq": 5,
+      "event_type": "RELEASED",
+      "actor_type": "SYSTEM",
+      "actor_id": null,
+      "payload": {
+        "final_decision": "PASS"
+      },
+      "payload_hash": "36f5b0958c3a78f8e535b91ecfbb5e960fa37ffd229ce6134e5006c661f01804",
+      "prev_event_hash": "b0eae2e370831a7eaae9138bc4497d7ed6d19e3bdf6c8f78cefee00bc5c2101d",
+      "event_hash": "57f8902cc05e0f2781964888e48a9b3d634ceb51b79d5d39461f80c2156d3dde",
+      "created_at": "2026-10-20T10:31:05.120Z"
+    }
+  ]
+}

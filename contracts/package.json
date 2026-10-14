@@ -1,0 +1,19 @@
+{
+  "name": "@ledgeit/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LedgeitAnchor: append-only on-chain registry of Merkle roots",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "node": "hardhat node --hostname 0.0.0.0",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:amoy": "hardhat run scripts/deploy.js --network amoy",
+    "export-abi": "hardhat compile && node -e \"const a=require('./artifacts/src/LedgeitAnchor.sol/LedgeitAnchor.json');require('fs').writeFileSync('abi/LedgeitAnchor.json',JSON.stringify({abi:a.abi,bytecode:a.bytecode},null,2)+'\\\\n')\""
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "5.0.0",
+    "hardhat": "2.28.6",
+    "solc": "0.8.24"
+  }
+}

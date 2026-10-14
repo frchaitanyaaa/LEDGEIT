@@ -1,0 +1,2 @@
+# Optional: real model backend (MODEL_BACKEND=yolo). Heavy (torch).
+ultralytics==8.3.40

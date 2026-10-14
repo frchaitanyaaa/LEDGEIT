@@ -1,0 +1,6 @@
+# Fixed conversion rates for the MVP Economics page (CHAITANYA.md §5.10).
+native_symbol: POL
+native_to_inr: "45.00"        # 1 POL in INR (update before the demo)
+eth_local_to_inr: "45.00"     # Hardhat local chain fees are priced as if POL
+storage_inr_per_gb_month: "2.00"
+compute_inr_per_inspection: "0.0100"

@@ -1,0 +1,51 @@
+{
+  "description": "Inspection proof record; device signs record_hash",
+  "record": {
+    "schema": "ledgeit.inspection.v1",
+    "inspection_id": "8f0e7c1a-5b2d-4d1e-9a77-3c2f1e0b9d44",
+    "inspection_code": "INS-20261020-A01-000123",
+    "unit_serial": "UNIT-A-000123",
+    "batch_code": "BATCH-2026-10-20-A",
+    "line": "LINE-A",
+    "device": "CAM-A-01",
+    "inspected_at": "2026-10-20T10:31:02.120Z",
+    "evidence": {
+      "sha256": "0825d099c3b8081fb8e703700de7a83f5fd4cf5ffb4d0d7d88b0e390f568e1c3",
+      "phash": "c3d1e0f0a8b4c2d1",
+      "mime": "image/jpeg",
+      "bytes": 48211
+    },
+    "model": {
+      "name": "ledgeit-defect-yolo",
+      "version": "1.2.0",
+      "weights_sha256": "9a129038d9a00aed0cf6a7ea059ca50a813449061ab87848cf1a13eafdf33b2c"
+    },
+    "result": {
+      "decision": "FAIL",
+      "defect_class": "scratches",
+      "severity": "MAJOR",
+      "confidence": "0.9640",
+      "boxes": [
+        {
+          "x1": 34,
+          "y1": 80,
+          "x2": 120,
+          "y2": 140,
+          "cls": "scratches",
+          "conf": "0.9640"
+        }
+      ]
+    },
+    "explanation": {
+      "method": "EigenCAM",
+      "heatmap_sha256": "1d7035dd7fd6a3aa413e06858073febd62ab28b22652dce388ebfbf398797631",
+      "summary": "Linear high-contrast streak in upper-left region"
+    },
+    "prev_record_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "canonical": "{\"batch_code\":\"BATCH-2026-10-20-A\",\"device\":\"CAM-A-01\",\"evidence\":{\"bytes\":48211,\"mime\":\"image/jpeg\",\"phash\":\"c3d1e0f0a8b4c2d1\",\"sha256\":\"0825d099c3b8081fb8e703700de7a83f5fd4cf5ffb4d0d7d88b0e390f568e1c3\"},\"explanation\":{\"heatmap_sha256\":\"1d7035dd7fd6a3aa413e06858073febd62ab28b22652dce388ebfbf398797631\",\"method\":\"EigenCAM\",\"summary\":\"Linear high-contrast streak in upper-left region\"},\"inspected_at\":\"2026-10-20T10:31:02.120Z\",\"inspection_code\":\"INS-20261020-A01-000123\",\"inspection_id\":\"8f0e7c1a-5b2d-4d1e-9a77-3c2f1e0b9d44\",\"line\":\"LINE-A\",\"model\":{\"name\":\"ledgeit-defect-yolo\",\"version\":\"1.2.0\",\"weights_sha256\":\"9a129038d9a00aed0cf6a7ea059ca50a813449061ab87848cf1a13eafdf33b2c\"},\"prev_record_hash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"result\":{\"boxes\":[{\"cls\":\"scratches\",\"conf\":\"0.9640\",\"x1\":34,\"x2\":120,\"y1\":80,\"y2\":140}],\"confidence\":\"0.9640\",\"decision\":\"FAIL\",\"defect_class\":\"scratches\",\"severity\":\"MAJOR\"},\"schema\":\"ledgeit.inspection.v1\",\"unit_serial\":\"UNIT-A-000123\"}",
+  "record_hash": "d94ae94b710d2e5c81c420272766ec5c49745b8229a2b82881ccdf6c3131fa14",
+  "device_public_key_b64": "s6MEz1xU7OGJk7W3s9EinOdjb8nTAFz/CF7QIejeF/Q=",
+  "device_signature_b64": "d1z/dD1dVoZvAwrEeQdPHTJLRhi0NrTHv0quD5CoDKOq+oARfqELpdk6HXHdWFRunQAZi+ZnMirBV2/WC8ivAw==",
+  "tampered_record_hash": "bd1405014dcb27f05fc183d69839dfa311c8169ea1352429674e5cf8374f0374"
+}

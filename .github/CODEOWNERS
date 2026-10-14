@@ -1,0 +1,13 @@
+# Replace <ishan-github> / <aryan-github> with real GitHub handles.
+/apps/api/                 @frchaitanyaaa
+/packages/proof-core/      @frchaitanyaaa
+/contracts/                @frchaitanyaaa
+/services/anchor-worker/   @frchaitanyaaa
+/infra/                    @frchaitanyaaa
+# /services/ai-inspector/    @<ishan-github>
+# /services/edge-simulator/  @<ishan-github>
+# /scripts/tamper-lab/       @<ishan-github>
+# /apps/web/                 @<aryan-github>
+# /apps/api/src/ledgeit_api/reports/    @<aryan-github>
+# /apps/api/src/ledgeit_api/economics/  @<aryan-github>
+/docs/                     @frchaitanyaaa

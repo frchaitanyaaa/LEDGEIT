@@ -4,7 +4,7 @@
 > **Team:** Ishan Shrivastava · Chaitanya Pagare · Aryan Kale
 > **Faculty Guide:** Dr. Shraddha Phansalkar · **Group ID:** LYBCC51 · MIT-ADT University, Dept. of CSE
 > **Repo:** https://github.com/frchaitanyaaa/LEDGEIT
-> **Suggested location in repo:** `docs/team/CHAITANYA.md` (linked from the root `README.md`)
+> **Location:** `docs/team/CHAITANYA.md` · **Implementation status:** [`docs/STATUS.md`](../STATUS.md) (decisions that changed this plan are in `docs/adr/`)
 
 ---
 

@@ -1,0 +1,31 @@
+# Risk-adaptive anchoring rules (CHAITANYA.md §5.6, ADR-007). Decimals are strings.
+# Edited live during the demo: the API and anchor worker re-read this file when it changes.
+
+classification:
+  high:
+    severities: [CRITICAL]
+    confidence_below: "0.60"
+    regulated_product: true       # products.is_regulated => HIGH
+    replay_alert: true            # DUPLICATE_EVIDENCE / POSSIBLE_REPLAY at ingest => HIGH
+    unapproved_model: true        # model registered but not APPROVED => HIGH
+  medium:
+    severities: [MINOR, MAJOR]
+    confidence_below: "0.85"
+  # anything else (PASS with confidence >= 0.85) is LOW
+  human_events: HIGH              # REVIEWED / OVERRIDDEN / APPROVED / DISPUTE_* / RELEASED / REJECTED
+
+anchoring:
+  HIGH:   { max_items: 50,  max_wait_seconds: 0 }   # flushed on the next worker tick (~1 s)
+  MEDIUM: { max_items: 10,  max_wait_seconds: 60 }
+  LOW:    { max_items: 100, max_wait_seconds: 600 }
+  max_attempts: 5
+
+replay:
+  phash_max_distance: 6
+  lookback_days: 30
+
+alerts:
+  low_confidence_below: "0.60"
+  high_override_rate: { window: 50, threshold: "0.20" }
+  delayed_approval_minutes: 30
+  missing_anchor_minutes: 15

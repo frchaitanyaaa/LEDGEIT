@@ -1,0 +1,13 @@
+target-version = "py311"
+line-length = 120
+extend-exclude = [".venv", "node_modules", "contracts", "apps/web"]
+
+[lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["UP017", "UP038", "B905", "E501"]  # timezone.utc readability; zip strict noise; formatter owns line length
+
+[lint.isort]
+known-first-party = ["app", "ledgeit_proof", "ledgeit_api", "ai_inspector", "simulator", "anchor_worker", "tamper_lab"]
+
+[lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Header", "fastapi.Query", "fastapi.File", "fastapi.Form", "ledgeit_api.auth.deps.require_roles"]

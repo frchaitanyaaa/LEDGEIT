@@ -1,0 +1,10 @@
+{
+  "name": "ledgeit-defect-stub",
+  "version": "1.1.0",
+  "kind": "classical-cv",
+  "description": "More sensitive variant of 1.0.0 (lower residual threshold). Used to demo 'which model decided'.",
+  "blur_sigma": 9.0,
+  "residual_z": 3.2,
+  "min_area": 14,
+  "detect_threshold": 0.30
+}

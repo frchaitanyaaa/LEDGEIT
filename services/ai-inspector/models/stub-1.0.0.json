@@ -1,0 +1,10 @@
+{
+  "name": "ledgeit-defect-stub",
+  "version": "1.0.0",
+  "kind": "classical-cv",
+  "description": "Background-subtraction anomaly detector (no learned weights). These parameters ARE the model; their SHA-256 is the weights hash.",
+  "blur_sigma": 9.0,
+  "residual_z": 3.6,
+  "min_area": 18,
+  "detect_threshold": 0.35
+}

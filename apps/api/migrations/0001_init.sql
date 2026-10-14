@@ -1,0 +1,350 @@
+-- LEDGEIT initial schema. Source: docs/team/CHAITANYA.md §7 + ADR-005/008.
+-- Proof tables are append-only (trigger-enforced). Mutable projections are never hashed.
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;  -- gen_random_uuid()
+
+-- ============ ENUMS ============
+CREATE TYPE user_role        AS ENUM ('OPERATOR','QUALITY_ENGINEER','QUALITY_MANAGER','AUDITOR','ADMIN');
+CREATE TYPE decision_t       AS ENUM ('PASS','FAIL');
+CREATE TYPE severity_t       AS ENUM ('NONE','MINOR','MAJOR','CRITICAL');
+CREATE TYPE risk_t           AS ENUM ('LOW','MEDIUM','HIGH');
+CREATE TYPE model_status_t   AS ENUM ('DRAFT','APPROVED','RETIRED');
+CREATE TYPE actor_t          AS ENUM ('DEVICE','USER','SYSTEM');
+CREATE TYPE event_t          AS ENUM ('INSPECTED','EVIDENCE_HASHED','RECORD_CREATED','ANCHOR_QUEUED','ANCHORED',
+                                      'REVIEWED','OVERRIDDEN','APPROVED','RELEASED','REJECTED',
+                                      'DISPUTE_RAISED','DISPUTE_RESOLVED','VERIFIED','TAMPER_DETECTED');
+CREATE TYPE anchor_status_t  AS ENUM ('PENDING','SUBMITTED','CONFIRMED','FAILED');
+CREATE TYPE verify_result_t  AS ENUM ('VERIFIED','FAILED','PENDING_ANCHOR');
+CREATE TYPE alert_t          AS ENUM ('HASH_MISMATCH','DUPLICATE_EVIDENCE','POSSIBLE_REPLAY','MODEL_MISMATCH',
+                                      'HIGH_OVERRIDE_RATE','LOW_CONFIDENCE','MISSING_ANCHOR','DELETION_ATTEMPT',
+                                      'DELAYED_APPROVAL','SIGNATURE_INVALID','TAMPER_DETECTED');
+CREATE TYPE alert_status_t   AS ENUM ('OPEN','ACKNOWLEDGED','RESOLVED');
+
+-- ============ IDENTITY ============
+CREATE TABLE users (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  employee_code  TEXT UNIQUE NOT NULL,
+  full_name      TEXT NOT NULL,
+  email          TEXT UNIQUE NOT NULL,
+  password_hash  TEXT NOT NULL,
+  role           user_role NOT NULL,
+  is_active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Append-only key history so signatures made with an old key stay verifiable (ADR-005).
+CREATE TABLE user_keys (
+  id           BIGSERIAL PRIMARY KEY,
+  user_id      UUID NOT NULL REFERENCES users(id),
+  public_key   TEXT NOT NULL,
+  label        TEXT,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (user_id, public_key)
+);
+
+-- ============ FACTORY MASTER DATA ============
+CREATE TABLE plants (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  location TEXT
+);
+
+CREATE TABLE production_lines (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  plant_id UUID NOT NULL REFERENCES plants(id),
+  code TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  genesis_hash CHAR(64) NOT NULL
+);
+
+-- Current head of each line's hash chain (mutable cache, updated only by the event writer).
+-- Lets verification detect deletion of the newest event(s) on a line.
+CREATE TABLE line_heads (
+  line_id UUID PRIMARY KEY REFERENCES production_lines(id),
+  last_seq BIGINT NOT NULL DEFAULT 0,
+  last_event_hash CHAR(64) NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE devices (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  line_id UUID NOT NULL REFERENCES production_lines(id),
+  device_code TEXT UNIQUE NOT NULL,
+  device_type TEXT NOT NULL DEFAULT 'CAMERA',
+  public_key TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  registered_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE products (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sku TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  is_regulated BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE batches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  batch_code TEXT UNIQUE NOT NULL,
+  product_id UUID NOT NULL REFERENCES products(id),
+  line_id UUID NOT NULL REFERENCES production_lines(id),
+  started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ended_at TIMESTAMPTZ
+);
+
+-- ============ AI MODEL REGISTRY ============
+CREATE TABLE ai_models (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  version TEXT NOT NULL,
+  weights_sha256 CHAR(64) NOT NULL,
+  framework TEXT NOT NULL,
+  dataset_version TEXT NOT NULL,
+  training_date DATE,
+  metrics JSONB NOT NULL DEFAULT '{}',
+  status model_status_t NOT NULL DEFAULT 'DRAFT',
+  registered_by UUID REFERENCES users(id),
+  approved_by UUID REFERENCES users(id),
+  approved_at TIMESTAMPTZ,
+  retired_at TIMESTAMPTZ,
+  deployed_at TIMESTAMPTZ,
+  environment TEXT NOT NULL DEFAULT 'demo',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (name, version)
+);
+
+-- Identity of a model version can never change after registration.
+CREATE OR REPLACE FUNCTION ledgeit_model_identity_immutable() RETURNS trigger AS $$
+BEGIN
+  IF NEW.name <> OLD.name OR NEW.version <> OLD.version OR NEW.weights_sha256 <> OLD.weights_sha256 THEN
+    RAISE EXCEPTION 'LEDGEIT: model name/version/weights_sha256 are immutable';
+  END IF;
+  RETURN NEW;
+END; $$ LANGUAGE plpgsql;
+CREATE TRIGGER ai_models_identity BEFORE UPDATE ON ai_models
+  FOR EACH ROW EXECUTE FUNCTION ledgeit_model_identity_immutable();
+
+-- ============ EVIDENCE ============
+CREATE TABLE evidence (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  kind TEXT NOT NULL CHECK (kind IN ('IMAGE','HEATMAP')),
+  sha256 CHAR(64) NOT NULL,          -- NOT unique: duplicates are a replay signal
+  phash CHAR(16),
+  storage_uri TEXT NOT NULL,
+  mime_type TEXT NOT NULL,
+  size_bytes BIGINT NOT NULL,
+  width INT,
+  height INT,
+  device_id UUID REFERENCES devices(id),
+  captured_at TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX idx_evidence_sha ON evidence(sha256);
+CREATE INDEX idx_evidence_phash ON evidence(phash);
+CREATE INDEX idx_evidence_captured ON evidence(captured_at DESC);
+
+-- ============ INSPECTION PROOF RECORD (immutable) ============
+CREATE TABLE inspections (
+  id UUID PRIMARY KEY,
+  inspection_code TEXT UNIQUE NOT NULL,
+  unit_serial TEXT NOT NULL,
+  batch_id UUID NOT NULL REFERENCES batches(id),
+  line_id UUID NOT NULL REFERENCES production_lines(id),
+  device_id UUID NOT NULL REFERENCES devices(id),
+  model_id UUID NOT NULL REFERENCES ai_models(id),
+  evidence_id UUID NOT NULL REFERENCES evidence(id),
+  heatmap_evidence_id UUID REFERENCES evidence(id),
+  decision decision_t NOT NULL,
+  defect_class TEXT,
+  severity severity_t NOT NULL,
+  confidence NUMERIC(5,4) NOT NULL,
+  explanation JSONB NOT NULL,
+  risk_level risk_t NOT NULL,
+  risk_reasons TEXT[] NOT NULL DEFAULT '{}',
+  canonical_record JSONB NOT NULL,
+  record_hash CHAR(64) UNIQUE NOT NULL,
+  device_signature TEXT NOT NULL,
+  inspected_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_insp_batch ON inspections(batch_id);
+CREATE INDEX idx_insp_line_time ON inspections(line_id, inspected_at DESC);
+CREATE INDEX idx_insp_device_time ON inspections(device_id, created_at DESC);
+CREATE INDEX idx_insp_time ON inspections(inspected_at DESC);
+
+-- ============ EVENT HASH CHAIN (append-only) ============
+CREATE TABLE inspection_events (
+  id BIGSERIAL PRIMARY KEY,
+  inspection_id UUID NOT NULL REFERENCES inspections(id),
+  line_id UUID NOT NULL REFERENCES production_lines(id),
+  seq BIGINT NOT NULL,
+  event_type event_t NOT NULL,
+  actor_type actor_t NOT NULL,
+  actor_id TEXT,                     -- device code / employee code (as hashed)
+  payload JSONB NOT NULL,
+  payload_hash CHAR(64) NOT NULL,
+  prev_event_hash CHAR(64) NOT NULL,
+  event_hash CHAR(64) UNIQUE NOT NULL,
+  signature TEXT,
+  created_at TIMESTAMPTZ NOT NULL,
+  UNIQUE (line_id, seq)
+);
+CREATE INDEX idx_events_insp ON inspection_events(inspection_id, seq);
+
+-- ============ HUMAN OVERRIDES ============
+CREATE TABLE overrides (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  inspection_id UUID NOT NULL REFERENCES inspections(id),
+  original_decision decision_t NOT NULL,
+  original_confidence NUMERIC(5,4) NOT NULL,
+  new_decision decision_t NOT NULL,
+  reason_code TEXT NOT NULL,
+  reason_text TEXT NOT NULL,
+  reviewed_evidence TEXT[] NOT NULL,
+  operator_id UUID NOT NULL REFERENCES users(id),
+  payload JSONB NOT NULL,
+  payload_hash CHAR(64) NOT NULL,
+  operator_public_key TEXT NOT NULL,
+  operator_signature TEXT NOT NULL,
+  event_id BIGINT NOT NULL REFERENCES inspection_events(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_overrides_insp ON overrides(inspection_id);
+
+CREATE TABLE override_approvals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  override_id UUID NOT NULL REFERENCES overrides(id),
+  approver_id UUID NOT NULL REFERENCES users(id),
+  approved BOOLEAN NOT NULL,
+  comment TEXT,
+  payload JSONB NOT NULL,
+  payload_hash CHAR(64) NOT NULL,
+  approver_public_key TEXT NOT NULL,
+  signature TEXT NOT NULL,
+  event_id BIGINT NOT NULL REFERENCES inspection_events(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (override_id)
+);
+
+-- ============ ANCHORING ============
+-- Durable queue (ADR-008). Mutable: the worker assigns batch_id.
+CREATE TABLE anchor_queue (
+  event_id BIGINT PRIMARY KEY REFERENCES inspection_events(id),
+  risk_level risk_t NOT NULL,
+  enqueued_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  batch_id BIGINT
+);
+CREATE INDEX idx_anchor_queue_pending ON anchor_queue(risk_level, enqueued_at) WHERE batch_id IS NULL;
+
+CREATE TABLE anchor_batches (
+  id BIGSERIAL PRIMARY KEY,
+  merkle_root CHAR(64) UNIQUE NOT NULL,
+  leaf_count INT NOT NULL,
+  risk_level risk_t NOT NULL,
+  status anchor_status_t NOT NULL DEFAULT 'PENDING',  -- mutable; the root itself never changes
+  attempts INT NOT NULL DEFAULT 0,
+  last_error TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  confirmed_at TIMESTAMPTZ
+);
+
+CREATE TABLE anchor_items (
+  id BIGSERIAL PRIMARY KEY,
+  batch_id BIGINT NOT NULL REFERENCES anchor_batches(id),
+  event_id BIGINT UNIQUE NOT NULL REFERENCES inspection_events(id),
+  leaf_index INT NOT NULL,
+  leaf_hash CHAR(64) NOT NULL,
+  merkle_proof JSONB NOT NULL
+);
+CREATE INDEX idx_anchor_items_batch ON anchor_items(batch_id);
+
+CREATE TABLE blockchain_txs (
+  id BIGSERIAL PRIMARY KEY,
+  batch_id BIGINT NOT NULL REFERENCES anchor_batches(id),
+  network TEXT NOT NULL,
+  chain_id INT NOT NULL,
+  contract_address CHAR(42) NOT NULL,
+  tx_hash CHAR(66) UNIQUE NOT NULL,
+  block_number BIGINT,
+  block_timestamp TIMESTAMPTZ,
+  gas_used BIGINT,
+  effective_gas_price_wei NUMERIC(38,0),
+  fee_native NUMERIC(38,18),
+  fee_inr NUMERIC(12,4),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ============ VERIFICATION, ALERTS, REPORTS, COSTS ============
+CREATE TABLE verifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  inspection_id UUID NOT NULL REFERENCES inspections(id),
+  requested_by UUID REFERENCES users(id),
+  result verify_result_t NOT NULL,
+  checks JSONB NOT NULL,
+  verified_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_verifications_insp ON verifications(inspection_id, verified_at DESC);
+
+CREATE TABLE alerts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  alert_type alert_t NOT NULL,
+  severity risk_t NOT NULL,
+  inspection_id UUID REFERENCES inspections(id),
+  details JSONB NOT NULL DEFAULT '{}',
+  status alert_status_t NOT NULL DEFAULT 'OPEN',
+  resolved_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  resolved_at TIMESTAMPTZ
+);
+CREATE INDEX idx_alerts_status ON alerts(status, created_at DESC);
+
+CREATE TABLE reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  report_type TEXT NOT NULL,
+  params JSONB NOT NULL,
+  file_uri TEXT NOT NULL,
+  file_sha256 CHAR(64) NOT NULL,
+  verification_code TEXT UNIQUE NOT NULL,
+  summary JSONB NOT NULL DEFAULT '{}',
+  generated_by UUID NOT NULL REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE cost_entries (
+  id BIGSERIAL PRIMARY KEY,
+  category TEXT NOT NULL,
+  amount_inr NUMERIC(12,4) NOT NULL,
+  period_start TIMESTAMPTZ NOT NULL,
+  period_end TIMESTAMPTZ NOT NULL,
+  source TEXT NOT NULL
+);
+
+-- ============ MUTABLE PROJECTION (never hashed) ============
+CREATE TABLE inspection_status (
+  inspection_id UUID PRIMARY KEY REFERENCES inspections(id),
+  status TEXT NOT NULL,
+  final_decision decision_t,
+  anchor_status anchor_status_t NOT NULL DEFAULT 'PENDING',
+  last_event_id BIGINT REFERENCES inspection_events(id),
+  last_verification verify_result_t,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_status_status ON inspection_status(status);
+
+-- ============ APPEND-ONLY ENFORCEMENT ============
+CREATE OR REPLACE FUNCTION ledgeit_forbid_mutation() RETURNS trigger AS $$
+BEGIN
+  RAISE EXCEPTION 'LEDGEIT: % on % is forbidden (append-only table)', TG_OP, TG_TABLE_NAME;
+END; $$ LANGUAGE plpgsql;
+
+DO $$
+DECLARE t TEXT;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['inspections','inspection_events','overrides','override_approvals',
+                           'anchor_items','blockchain_txs','evidence','verifications','user_keys']
+  LOOP
+    EXECUTE format('CREATE TRIGGER %I_append_only BEFORE UPDATE OR DELETE ON %I
+                    FOR EACH ROW EXECUTE FUNCTION ledgeit_forbid_mutation()', t, t);
+    EXECUTE format('CREATE TRIGGER %I_no_truncate BEFORE TRUNCATE ON %I
+                    FOR EACH STATEMENT EXECUTE FUNCTION ledgeit_forbid_mutation()', t, t);
+  END LOOP;
+END $$;

@@ -1,0 +1,90 @@
+name: ledgeit
+
+x-app-env: &app-env
+  DATABASE_URL: postgresql+psycopg://ledgeit:ledgeit@postgres:5432/ledgeit
+  TAMPER_DATABASE_URL: postgresql+psycopg://ledgeit:ledgeit@postgres:5432/ledgeit
+  STORAGE_BACKEND: s3
+  S3_ENDPOINT: http://minio:9000
+  S3_ACCESS_KEY: ledgeit
+  S3_SECRET_KEY: ledgeit123
+  S3_BUCKET: evidence
+  CHAIN: ${CHAIN:-local}
+  RPC_URL_LOCAL: http://hardhat:8545
+  RPC_URL_AMOY: ${RPC_URL_AMOY:-https://rpc-amoy.polygon.technology}
+  ANCHOR_PRIVATE_KEY: ${ANCHOR_PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
+  CONTRACT_ADDRESS: ${CONTRACT_ADDRESS:-}
+  JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
+  PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:5173}
+
+services:
+  postgres:
+    image: postgres:16
+    environment: { POSTGRES_USER: ledgeit, POSTGRES_PASSWORD: ledgeit, POSTGRES_DB: ledgeit }
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ledgeit"]
+      interval: 3s
+      retries: 20
+
+  minio:
+    image: minio/minio:RELEASE.2024-11-07T00-52-20Z
+    command: server /data --console-address ":9001"
+    environment: { MINIO_ROOT_USER: ledgeit, MINIO_ROOT_PASSWORD: ledgeit123 }
+    ports: ["9000:9000", "9001:9001"]
+    volumes: ["miniodata:/data"]
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 3s
+      retries: 20
+
+  minio-init:
+    image: minio/mc:RELEASE.2024-11-17T19-35-25Z
+    depends_on: { minio: { condition: service_healthy } }
+    entrypoint: ["/bin/sh", "/init/init.sh"]
+    volumes: ["./minio:/init:ro"]
+
+  hardhat:
+    build: ../contracts
+    ports: ["8545:8545"]
+
+  api:
+    build: { context: .., dockerfile: apps/api/Dockerfile }
+    environment: *app-env
+    ports: ["8000:8000"]
+    volumes:
+      - ../contracts/deployments:/app/contracts/deployments
+      - ../services/edge-simulator/keys:/app/services/edge-simulator/keys
+      - ../services/ai-inspector/models:/app/services/ai-inspector/models:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+      minio-init: { condition: service_completed_successfully }
+
+  anchor-worker:
+    build: { context: .., dockerfile: services/anchor-worker/Dockerfile }
+    environment: *app-env
+    volumes: ["../contracts/deployments:/app/contracts/deployments"]
+    depends_on: [api, hardhat]
+    restart: unless-stopped
+
+  ai-inspector:
+    build: { context: .., dockerfile: services/ai-inspector/Dockerfile }
+    environment: { MODEL_BACKEND: "${MODEL_BACKEND:-stub}" }
+    ports: ["8001:8001"]
+    volumes: ["../services/ai-inspector/models:/svc/models"]
+
+  edge-simulator:
+    build: { context: .., dockerfile: services/edge-simulator/Dockerfile }
+    profiles: ["demo"]
+    environment: { API_URL: "http://api:8000", AI_INSPECTOR_URL: "http://ai-inspector:8001" }
+    volumes: ["../services/edge-simulator/keys:/app/services/edge-simulator/keys:ro"]
+    depends_on: [api, ai-inspector]
+
+  web:
+    build: { context: .., dockerfile: apps/web/Dockerfile }
+    ports: ["5173:80"]
+    depends_on: [api]
+
+volumes:
+  pgdata:
+  miniodata:
