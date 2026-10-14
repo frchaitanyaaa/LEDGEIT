@@ -60,6 +60,13 @@ def engine():
 
 @pytest.fixture(autouse=True)
 def _reset(engine, tmp_path):
+    # fresh evidence store per test (storage is content-addressed, so tests would otherwise share objects)
+    from ledgeit_api.core.config import get_settings
+    from ledgeit_api.services.storage import get_storage
+
+    os.environ["STORAGE_DIR"] = str(tmp_path / "evidence")
+    get_settings.cache_clear()
+    get_storage.cache_clear()
     # Superuser + replica mode skips the append-only triggers (exactly what the Tamper Lab abuses).
     with engine.begin() as c:
         c.execute(text("SET LOCAL session_replication_role = replica"))
@@ -143,3 +150,33 @@ def frame():
         return s.jpeg, s.truth
 
     return _frame
+
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts" / "tamper-lab"))
+
+
+@pytest.fixture
+def signer(client, auth):
+    """signer(role) -> object with .headers, .code, .key and .sign(payload) for signed human actions."""
+    from datetime import datetime, timezone
+
+    from ledgeit_proof import fmt_ts, generate_keypair, hash_json, sign_hex_digest
+
+    class Signer:
+        def __init__(self, role: str):
+            self.headers = auth(role)
+            self.key = generate_keypair()
+            me = client.post("/api/v1/auth/keys", headers=self.headers, json={"public_key": self.key.public_key_b64})
+            assert me.status_code == 201, me.text
+            self.code = me.json()["employee_code"]
+
+        def who(self) -> dict:
+            return {"employee_code": self.code, "public_key": self.key.public_key_b64}
+
+        def now(self) -> str:
+            return fmt_ts(datetime.now(timezone.utc))
+
+        def sign(self, payload: dict) -> dict:
+            return {"payload": payload, "signature": sign_hex_digest(hash_json(payload), self.key.seed_b64)}
+
+    return Signer

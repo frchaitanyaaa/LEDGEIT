@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     rpc_url_amoy: str = "https://rpc-amoy.polygon.technology"
     anchor_private_key: str = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
     contract_address: str = ""
+    public_rpc_url: str = ""  # RPC the browser uses for in-browser verification
 
     risk_config: str = str(REPO_ROOT / "config" / "risk.yaml")
     economics_config: str = str(REPO_ROOT / "config" / "economics.yaml")
