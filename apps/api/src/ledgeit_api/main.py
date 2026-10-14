@@ -4,6 +4,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import __version__
+from .anchoring.router import router as anchoring_router
 from .auth.router import router as auth_router
 from .auth.router import users_router
 from .core.config import get_settings
@@ -36,6 +37,7 @@ def create_app() -> FastAPI:
     api.include_router(ingest_router)
     api.include_router(inspections_router)
     api.include_router(registry_router)
+    api.include_router(anchoring_router)
 
     @api.get("/health", tags=["meta"])
     def health():

@@ -15,7 +15,7 @@ classification:
   human_events: HIGH              # REVIEWED / OVERRIDDEN / APPROVED / DISPUTE_* / RELEASED / REJECTED
 
 anchoring:
-  HIGH:   { max_items: 1,   max_wait_seconds: 0 }
+  HIGH:   { max_items: 50,  max_wait_seconds: 0 }   # flushed on the next worker tick (~1 s)
   MEDIUM: { max_items: 10,  max_wait_seconds: 60 }
   LOW:    { max_items: 100, max_wait_seconds: 600 }
   max_attempts: 5

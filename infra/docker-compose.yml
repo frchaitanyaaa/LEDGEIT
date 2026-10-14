@@ -60,6 +60,13 @@ services:
       postgres: { condition: service_healthy }
       minio-init: { condition: service_completed_successfully }
 
+  anchor-worker:
+    build: { context: .., dockerfile: services/anchor-worker/Dockerfile }
+    environment: *app-env
+    volumes: ["../contracts/deployments:/app/contracts/deployments"]
+    depends_on: [api, hardhat]
+    restart: unless-stopped
+
   ai-inspector:
     build: { context: .., dockerfile: services/ai-inspector/Dockerfile }
     environment: { MODEL_BACKEND: "${MODEL_BACKEND:-stub}" }

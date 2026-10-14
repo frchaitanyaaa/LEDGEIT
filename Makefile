@@ -4,7 +4,7 @@ PY ?= .venv/bin/python
 PIP ?= .venv/bin/pip
 COMPOSE := docker compose -f infra/docker-compose.yml
 
-.PHONY: help install install-py install-js test test-py test-ts test-contracts lint up down logs migrate seed schema vectors
+.PHONY: dev-start dev-stop dev-status worker help install install-py install-js test test-py test-ts test-contracts lint up down logs migrate seed schema vectors
 
 help:
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk -F':.*?## ' '{printf "  %-16s %s\n", $$1, $$2}'
@@ -57,3 +57,15 @@ schema: ## Regenerate infra/db/schema.sql from migrations
 
 vectors: ## Regenerate proof-core test vectors
 	$(PY) packages/proof-core/scripts/gen_vectors.py
+
+dev-start: ## Run the stack natively (no Docker): hardhat, ai, api, worker, web
+	scripts/dev.sh start
+
+dev-stop:
+	scripts/dev.sh stop
+
+dev-status:
+	scripts/dev.sh status
+
+worker: ## Anchor everything pending right now (one tick, flush all windows)
+	$(PY) -m ledgeit_api.anchoring.run --once --flush

@@ -171,7 +171,12 @@ private key material is the 32-byte seed.
 | `REVIEWED` / `OVERRIDDEN` / `APPROVED` / `DISPUTE_*` | USER | `{"inspection_id", "payload": <signed payload>, "payload_hash", "signature"}` |
 | `RELEASED` / `REJECTED` | SYSTEM | `{"inspection_id", "final_decision", "cause_event_hash"}` |
 
-Every event is a Merkle leaf and is anchored according to its inspection's risk level.
+Every event is a Merkle leaf and is anchored according to its inspection's risk level (human and SYSTEM
+events are always HIGH).
+
+`ANCHORED` and `ANCHOR_QUEUED` exist in the enum but are **never appended to the chain**: an `ANCHORED`
+event would itself need anchoring (infinite regress). Anchor state is kept in `anchor_batches`,
+`anchor_items` and `blockchain_txs`, which are verified independently by check 5.
 
 ## 8. Verification checks
 

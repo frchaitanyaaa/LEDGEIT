@@ -373,3 +373,9 @@ GRANT SELECT, INSERT ON plants, production_lines, products TO ledgeit_app;
 GRANT SELECT ON schema_migrations TO ledgeit_app;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO ledgeit_app;
 
+-- ===== 0003_anchor_retry.sql =====
+-- Retry bookkeeping for the anchor worker (backoff between attempts).
+ALTER TABLE anchor_batches ADD COLUMN last_attempt_at TIMESTAMPTZ;
+ALTER TABLE anchor_batches ADD COLUMN submitted_tx_hash CHAR(66);
+CREATE INDEX idx_anchor_batches_status ON anchor_batches(status, created_at);
+
