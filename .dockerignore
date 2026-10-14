@@ -1,0 +1,11 @@
+.git
+.venv
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+datasets
+var
+docs/references
+contracts/artifacts
+contracts/cache
+services/edge-simulator/keys

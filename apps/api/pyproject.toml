@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ledgeit-api"
+version = "0.1.0"
+description = "LEDGEIT backend API, verification engine and anchor worker core"
+requires-python = ">=3.11"
+
+[project.scripts]
+ledgeit-migrate = "ledgeit_api.db.migrate:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ledgeit_api = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]

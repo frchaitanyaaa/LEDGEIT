@@ -1,0 +1,252 @@
+{
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "root",
+          "type": "bytes32"
+        }
+      ],
+      "name": "AlreadyAnchored",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "riskLevel",
+          "type": "uint8"
+        }
+      ],
+      "name": "BadRiskLevel",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "EmptyBatch",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotAnchorer",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroRoot",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "who",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "allowed",
+          "type": "bool"
+        }
+      ],
+      "name": "AnchorerSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "root",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "batchId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "leafCount",
+          "type": "uint32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "riskLevel",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "timestamp",
+          "type": "uint64"
+        }
+      ],
+      "name": "RootAnchored",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "root",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "batchId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint32",
+          "name": "leafCount",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint8",
+          "name": "riskLevel",
+          "type": "uint8"
+        }
+      ],
+      "name": "anchor",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "anchorCount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "anchors",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "timestamp",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint64",
+          "name": "blockNumber",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint32",
+          "name": "leafCount",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint8",
+          "name": "riskLevel",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "root",
+          "type": "bytes32"
+        }
+      ],
+      "name": "isAnchored",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "isAnchorer",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "who",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "allowed",
+          "type": "bool"
+        }
+      ],
+      "name": "setAnchorer",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x60a060405234801561000f575f80fd5b503360808190525f8181526020818152604091829020805460ff1916600190811790915591519182527f58194d465adc081c8ca38a8a3c3d6bb6fca0bad31216f20c504878408f1ef6c9910160405180910390a260805161059a6100815f395f818160ef01526103eb015261059a5ff3fe608060405234801561000f575f80fd5b506004361061007a575f3560e01c80638da5cb5b116100585780638da5cb5b146100ea5780638eaaf6e314610129578063b01b6d531461014b578063ec8fbb3f146101d4575f80fd5b8063046b58b31461007e57806334f96c8c146100935780634f0b5801146100af575b5f80fd5b61009161008c366004610485565b6101e7565b005b61009c60025481565b6040519081526020015b60405180910390f35b6100da6100bd3660046104d9565b5f9081526001602052604090205467ffffffffffffffff16151590565b60405190151581526020016100a6565b6101117f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b0390911681526020016100a6565b6100da61013736600461050b565b5f6020819052908152604090205460ff1681565b61019a6101593660046104d9565b60016020525f908152604090205467ffffffffffffffff80821691600160401b810490911690600160801b810463ffffffff1690600160a01b900460ff1684565b6040805167ffffffffffffffff958616815294909316602085015263ffffffff9091169183019190915260ff1660608201526080016100a6565b6100916101e236600461052b565b6103e0565b335f9081526020819052604090205460ff166102165760405163d46c421560e01b815260040160405180910390fd5b836102345760405163b263ae7360e01b815260040160405180910390fd5b8163ffffffff165f0361025a5760405163c2e5347d60e01b815260040160405180910390fd5b60028160ff161115610289576040516349998af360e11b815260ff821660048201526024015b60405180910390fd5b5f8481526001602052604090205467ffffffffffffffff16156102c2576040516330d2381360e01b815260048101859052602401610280565b6040805160808101825267ffffffffffffffff428181168352438216602080850191825263ffffffff80891686880190815260ff808a16606089019081525f8e81526001958690528a902098518954965193519151909216600160a01b0260ff60a01b1991909416600160801b021664ffffffffff60801b19928816600160401b026fffffffffffffffffffffffffffffffff199096169190971617939093179290921693909317179092556002805490910190559051849186917f75c8d0cf90255468c57dcff7d167c4319a21cea109e0fcb4ff830e52be43fbde916103d2918791879163ffffffff93909316835260ff91909116602083015267ffffffffffffffff16604082015260600190565b60405180910390a350505050565b336001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001614610429576040516330cd747160e01b815260040160405180910390fd5b6001600160a01b0382165f8181526020818152604091829020805460ff191685151590811790915591519182527f58194d465adc081c8ca38a8a3c3d6bb6fca0bad31216f20c504878408f1ef6c9910160405180910390a25050565b5f805f8060808587031215610498575f80fd5b8435935060208501359250604085013563ffffffff811681146104b9575f80fd5b9150606085013560ff811681146104ce575f80fd5b939692955090935050565b5f602082840312156104e9575f80fd5b5035919050565b80356001600160a01b0381168114610506575f80fd5b919050565b5f6020828403121561051b575f80fd5b610524826104f0565b9392505050565b5f806040838503121561053c575f80fd5b610545836104f0565b915060208301358015158114610559575f80fd5b80915050925092905056fea26469706673582212208ae738198a6105e38fb4de3e9341b8c690dc3bfac90e92c4577f7b8b235c453964736f6c63430008180033"
+}

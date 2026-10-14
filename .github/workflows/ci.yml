@@ -26,3 +26,34 @@ jobs:
       - run: npm ci --prefix packages/proof-core/ts
       - run: npm run typecheck --prefix packages/proof-core/ts
       - run: npx --prefix packages/proof-core/ts vitest run --root packages/proof-core/ts
+
+  api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_USER: ledgeit, POSTGRES_PASSWORD: ledgeit, POSTGRES_DB: ledgeit }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ledgeit" --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://ledgeit:ledgeit@localhost:5432/ledgeit
+      TEST_DATABASE_URL: postgresql+psycopg://ledgeit:ledgeit@localhost:5432/ledgeit_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -e packages/proof-core/python -r apps/api/requirements.txt -r apps/api/requirements-dev.txt -e apps/api
+      - run: ruff check apps/api
+      - run: pytest -q apps/api
+      - name: Reference schema is up to date
+        run: python -m ledgeit_api.db.migrate --dump infra/db/schema.sql && git diff --exit-code infra/db/schema.sql
+
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm ci --prefix contracts
+      - run: cd contracts && npx hardhat test
