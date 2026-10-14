@@ -23,6 +23,12 @@ from .verification.router import router as verification_router
 
 def create_app() -> FastAPI:
     s = get_settings()
+    if s.jwt_secret in ("change-me-in-production", "dev-only-change-me") and s.chain == "amoy":
+        raise RuntimeError("Refusing to start with a default JWT_SECRET on a public chain deployment")
+    if s.jwt_secret in ("change-me-in-production", "dev-only-change-me"):
+        import logging
+
+        logging.getLogger("ledgeit").warning("JWT_SECRET is the development default — set a real secret")
     app = FastAPI(
         title="LEDGEIT API",
         version=__version__,

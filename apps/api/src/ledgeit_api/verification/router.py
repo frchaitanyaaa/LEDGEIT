@@ -66,7 +66,9 @@ def list_verifications(result: str | None = None, limit: int = Query(default=50,
 
 # ---------------- public (QR target) ----------------
 
-public = APIRouter(prefix="/public", tags=["public"])
+from ..core.ratelimit import public_limiter  # noqa: E402
+
+public = APIRouter(prefix="/public", tags=["public"], dependencies=[Depends(public_limiter)])
 
 
 def public_rpc_url() -> str | None:

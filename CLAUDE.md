@@ -25,7 +25,7 @@
 ## Commands
 - `make install` — create .venv, install Python packages + npm deps
 - `make test` — all test suites (proof-core py+ts, api, ai, contracts, web)
-- `make up` / `make seed` / `make demo` — run the stack (see README)
+- `make dev-start` (native) or `make up` (Docker), then `make seed`, `make demo` — see README
 
 ## Before finishing a task
 - Run the module's tests and linter and show results.

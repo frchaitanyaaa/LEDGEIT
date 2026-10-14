@@ -44,3 +44,12 @@ def test_rbac_users_admin_only(client, auth):
     assert client.post("/api/v1/users", headers=auth("admin"), json=body).status_code == 409
     users = client.get("/api/v1/users", headers=auth("auditor")).json()
     assert any(u["employee_code"] == "QE-9" for u in users)
+
+
+def test_public_endpoint_rate_limited(client):
+    from ledgeit_api.core.ratelimit import public_limiter
+
+    public_limiter.hits.clear()
+    codes = [client.get("/api/v1/public/verify/NOPE").status_code for _ in range(32)]
+    assert codes[:30] == [404] * 30 and codes[-1] == 429
+    public_limiter.hits.clear()

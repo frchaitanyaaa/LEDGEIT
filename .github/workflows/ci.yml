@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      - run: pip install -e packages/proof-core/python pytest ruff
+      - run: pip install -e packages/proof-core/python pytest ruff==0.8.2
       - run: ruff check packages/proof-core
       - run: pytest -q packages/proof-core/python
       - name: Vectors are up to date
@@ -64,7 +64,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      - run: pip install -e packages/proof-core/python -r services/ai-inspector/requirements.txt -e services/edge-simulator pytest ruff
+      - run: pip install -e packages/proof-core/python -r services/ai-inspector/requirements.txt -e services/edge-simulator pytest ruff==0.8.2
       - run: ruff check services
       - run: cd services/ai-inspector && pytest -q
 
