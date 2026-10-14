@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ledgeit-proof"
+version = "1.0.0"
+description = "LEDGEIT proof-core: canonicalization, hashing, hash chain, Merkle proofs, Ed25519"
+requires-python = ">=3.11"
+dependencies = ["rfc8785>=0.1.4", "pynacl>=1.5"]
+
+[tool.setuptools]
+packages = ["ledgeit_proof"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

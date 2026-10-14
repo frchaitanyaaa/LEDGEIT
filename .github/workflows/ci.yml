@@ -1,0 +1,28 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  proof-core-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -e packages/proof-core/python pytest ruff
+      - run: ruff check packages/proof-core
+      - run: pytest -q packages/proof-core/python
+      - name: Vectors are up to date
+        run: python packages/proof-core/scripts/gen_vectors.py && git diff --exit-code packages/proof-core/test-vectors
+
+  proof-core-ts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm ci --prefix packages/proof-core/ts
+      - run: npm run typecheck --prefix packages/proof-core/ts
+      - run: npx --prefix packages/proof-core/ts vitest run --root packages/proof-core/ts

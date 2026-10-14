@@ -1,0 +1,34 @@
+{
+  "description": "Ed25519 over ASCII bytes of the hex digest. Keys/sigs standard base64.",
+  "cases": [
+    {
+      "label": "device:CAM-A-01",
+      "seed_b64": "KdA1RiKU1YE6Unf3foBbsN1y6usIeqoPeM+0pozj43U=",
+      "public_key_b64": "s6MEz1xU7OGJk7W3s9EinOdjb8nTAFz/CF7QIejeF/Q=",
+      "message_hex": "29d035462294d5813a5277f77e805bb0dd72eaeb087aaa0f78cfb4a68ce3e375",
+      "signature_b64": "WVqdsyS/DdEch+l/o5vILhN1nbmzDG1HaU3kWwnGPMj/1KPQ/vc0qoept68WbLk7wkK4sD7jsDq3tx01XFzhAQ=="
+    },
+    {
+      "label": "user:QE-0042",
+      "seed_b64": "Gu/1Jys382FL3NcjnK9iNgqYNMyg0soqSlleTG3ymn8=",
+      "public_key_b64": "44yJBP3Mbkh4W3Vl18l8l7sG5VuOWl5eLam6jLZndZ0=",
+      "message_hex": "1aeff5272b37f3614bdcd7239caf62360a9834cca0d2ca2a4a595e4c6df29a7f",
+      "signature_b64": "g+PljlCTqnJuJuOU0/u01p6lbi5zJUuO0eyUZbANq5nVhD+2ygekZxgC5DxWlohpQZhtuE5J9NZBKBkpQnu0Bg=="
+    },
+    {
+      "label": "user:QM-0007",
+      "seed_b64": "a9jlMGq5Ht2WDBX4uQ894raVdsh60dvYYqyPMHt6F0o=",
+      "public_key_b64": "ZgPzffhCFwGQfW1wQaMqOWJew5HI6SfsJ+DCHcZ13eE=",
+      "message_hex": "6bd8e5306ab91edd960c15f8b90f3de2b69576c87ad1dbd862ac8f307b7a174a",
+      "signature_b64": "w3ibAd6+AWl+3GapeiwVqWExiYCP+UsHyrSwZQdC4BcMuC2AkeOEcuCcwT3NRuaIz2rCOowqbpjlwfhhRdcACg=="
+    }
+  ],
+  "invalid": [
+    {
+      "public_key_b64": "4glodcJooJk/IPpLZuFf9lHp5VzSwI37sk4fQHnBRbo=",
+      "message_hex": "29d035462294d5813a5277f77e805bb0dd72eaeb087aaa0f78cfb4a68ce3e375",
+      "signature_b64": "WVqdsyS/DdEch+l/o5vILhN1nbmzDG1HaU3kWwnGPMj/1KPQ/vc0qoept68WbLk7wkK4sD7jsDq3tx01XFzhAQ==",
+      "reason": "wrong key"
+    }
+  ]
+}
