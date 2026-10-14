@@ -9,10 +9,13 @@ from .auth.router import router as auth_router
 from .auth.router import users_router
 from .core.config import get_settings
 from .core.errors import install_error_handlers
+from .dashboard.router import router as dashboard_router
+from .economics.router import router as economics_router
 from .human.router import router as human_router
 from .inspections.ingest import router as ingest_router
 from .inspections.router import router as inspections_router
 from .registry.router import router as registry_router
+from .reports.router import router as reports_router
 from .services.feed import hub
 from .verification.router import public as public_router
 from .verification.router import router as verification_router
@@ -44,6 +47,9 @@ def create_app() -> FastAPI:
     api.include_router(human_router)
     api.include_router(verification_router)
     api.include_router(public_router)
+    api.include_router(reports_router)
+    api.include_router(economics_router)
+    api.include_router(dashboard_router)
 
     @api.get("/health", tags=["meta"])
     def health():

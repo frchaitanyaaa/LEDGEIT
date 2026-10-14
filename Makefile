@@ -52,6 +52,9 @@ migrate: ## Apply DB migrations
 seed: migrate ## Seed demo plant, lines, devices, users
 	$(PY) -m ledgeit_api.db.seed
 
+openapi: ## Export docs/api/openapi.json
+	$(PY) -c "import json; from ledgeit_api.main import create_app; open('docs/api/openapi.json','w').write(json.dumps(create_app().openapi(), indent=1)+'\n')"
+
 schema: ## Regenerate infra/db/schema.sql from migrations
 	$(PY) -m ledgeit_api.db.migrate --dump infra/db/schema.sql
 
