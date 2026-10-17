@@ -15,9 +15,10 @@ export default function Models() {
   return (
     <>
       <PageHeader title="AI model registry" subtitle="Each version is identified by the SHA-256 of its weights. A record decided by an unapproved model fails verification check 2." />
-      <ErrorBox error={q.error || act.error} />
+      <ErrorBox error={q.error || act.error} onRetry={q.error ? () => q.refetch() : undefined} />
       <Card>
-        <Table head={["Model", "Status", "Weights SHA-256", "Framework / dataset", "Metrics", "Inspections", "Override rate", "Approved", ""]}>
+        <Table head={["Model", "Status", "Weights SHA-256", "Framework / dataset", "Metrics", "Inspections", "Override rate", "Approved", ""]}
+          loading={q.isLoading} empty={q.data?.length === 0} emptyText="No models registered yet. Run the seed or register one with POST /api/v1/models.">
           {q.data?.map((m) => (
             <tr key={m.id}>
               <td className="td font-mono text-xs">{m.name}<br /><b>{m.version}</b></td>
@@ -29,8 +30,8 @@ export default function Models() {
               <td className="td">{pct(m.override_rate)}</td>
               <td className="td text-xs">{m.approved_by ? <>{m.approved_by}<br />{dt(m.approved_at)}</> : "—"}</td>
               <td className="td">
-                {can("QUALITY_MANAGER", "ADMIN") && m.status !== "APPROVED" && <button className="btn-success px-2 py-1 text-xs" onClick={() => act.mutate({ id: m.id, action: "approve" })}>Approve</button>}
-                {can("QUALITY_MANAGER", "ADMIN") && m.status === "APPROVED" && <button className="btn-secondary px-2 py-1 text-xs" onClick={() => act.mutate({ id: m.id, action: "retire" })}>Retire</button>}
+                {can("QUALITY_MANAGER", "ADMIN") && m.status !== "APPROVED" && <button className="btn-success px-2 py-1 text-xs" disabled={act.isPending} onClick={() => act.mutate({ id: m.id, action: "approve" })}>Approve</button>}
+                {can("QUALITY_MANAGER", "ADMIN") && m.status === "APPROVED" && <button className="btn-secondary px-2 py-1 text-xs" disabled={act.isPending} onClick={() => act.mutate({ id: m.id, action: "retire" })}>Retire</button>}
               </td>
             </tr>
           ))}

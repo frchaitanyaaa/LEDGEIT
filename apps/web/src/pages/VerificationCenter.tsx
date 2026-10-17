@@ -23,7 +23,7 @@ export default function VerificationCenter() {
       <PageHeader title="Verification center" subtitle="Re-check records against their original fingerprints. One changed byte → mismatch."
         actions={<>
           <select className="input w-auto" value={line} onChange={(e) => setLine(e.target.value)}>
-            <option value="">all lines</option><option>LINE-A</option><option>LINE-B</option>
+            <option value="">All lines</option><option>LINE-A</option><option>LINE-B</option>
           </select>
           <button className="btn-primary" onClick={() => run.mutate()} disabled={run.isPending}><ShieldCheck size={16} /> {run.isPending ? "Verifying…" : "Verify latest 100"}</button>
         </>} />
@@ -31,10 +31,11 @@ export default function VerificationCenter() {
         <form className="flex flex-wrap items-end gap-2" onSubmit={(e) => { e.preventDefault(); if (code.trim()) nav(`/inspections/${code.trim()}`); }}>
           <div className="flex-1"><label className="label">Verify one record</label>
             <input className="input" placeholder="Inspection code (INS-…) or id" value={code} onChange={(e) => setCode(e.target.value)} /></div>
-          <button className="btn-secondary">Open</button>
+          <button className="btn-secondary" disabled={!code.trim()}>Open</button>
         </form>
       </Card>
       <ErrorBox error={run.error} />
+      <ErrorBox error={history.error} onRetry={() => history.refetch()} />
       {run.data && (
         <div className="mb-4 grid grid-cols-3 gap-3">
           <Stat label="Verified" value={run.data.summary.VERIFIED} tone="green" />
@@ -43,7 +44,8 @@ export default function VerificationCenter() {
         </div>
       )}
       <Card title="Verification history">
-        <Table head={["When", "Inspection", "Result", ...CHECKS.map((c, i) => `${i + 1}. ${c}`), "By"]} empty={history.data?.length === 0}>
+        <Table head={["When", "Inspection", "Result", ...CHECKS.map((c, i) => `${i + 1}. ${c}`), "By"]} loading={history.isLoading}
+          empty={history.data?.length === 0} emptyText="No verifications yet. Run “Verify latest 100” or open a single record.">
           {history.data?.map((v) => (
             <tr key={v.id}>
               <td className="td whitespace-nowrap text-xs text-slate-500">{dt(v.verified_at)}</td>

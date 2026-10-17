@@ -10,7 +10,7 @@ const RISK_COLORS: Record<string, string> = { LOW: "#94a3b8", MEDIUM: "#f59e0b",
 export default function Executive() {
   const q = useQuery({ queryKey: ["dashboard"], queryFn: () => api<any>("/dashboard/summary"), refetchInterval: 5000 });
   if (q.isLoading) return <Spinner />;
-  if (q.error) return <ErrorBox error={q.error} />;
+  if (q.error) return <ErrorBox error={q.error} onRetry={() => q.refetch()} />;
   const d = q.data;
   const k = d.kpis;
   const hourly = d.hourly.map((h: any) => ({ ...h, hour: h.hour.slice(11) }));
@@ -70,7 +70,7 @@ export default function Executive() {
           </div>
         </Card>
         <Card title="Production lines">
-          <Table head={["Line", "Inspections", "FAIL", "Chain length"]}>
+          <Table head={["Line", "Inspections", "FAIL", "Chain length"]} empty={d.by_line.length === 0} emptyText="No production lines yet.">
             {d.by_line.map((l: any) => (
               <tr key={l.line}><td className="td whitespace-nowrap font-medium">{l.line}</td><td className="td">{l.inspections}</td>
                 <td className="td">{l.fail}</td><td className="td">{l.chain_length} events</td></tr>
@@ -80,7 +80,7 @@ export default function Executive() {
             Anchoring: {d.anchoring.confirmed} batches confirmed · {d.anchoring.pending} pending · last {ago(d.anchoring.last_confirmed)}
           </div>
         </Card>
-        <Card title="Open alerts" actions={<Link to="/risk" className="text-xs text-brand-600">view all</Link>}>
+        <Card title="Open alerts" actions={<Link to="/risk" className="text-xs text-brand-600">View all</Link>}>
           {d.alert_types.length === 0 ? <p className="text-sm text-slate-500">No open alerts.</p> : (
             <ul className="space-y-1.5">
               {d.alert_types.map((a: any) => (
@@ -93,7 +93,7 @@ export default function Executive() {
         </Card>
       </div>
       <Card title="Models in use" className="mt-4">
-        <Table head={["Model", "Status", "Inspections", "Overrides", "Avg confidence"]}>
+        <Table head={["Model", "Status", "Inspections", "Overrides", "Avg confidence"]} empty={d.by_model.length === 0} emptyText="No inspections have used a model yet.">
           {d.by_model.map((m: any) => (
             <tr key={m.model}><td className="td font-mono text-xs">{m.model}</td><td className="td"><Badge tone={m.status === "APPROVED" ? "green" : "amber"}>{m.status}</Badge></td>
               <td className="td">{m.inspections}</td><td className="td">{m.overrides}</td><td className="td">{m.avg_confidence ?? "—"}</td></tr>

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ApprovalActions } from "../components/Actions";
-import { Badge, Card, DecisionBadge, ErrorBox, PageHeader, Table } from "../components/ui";
+import { Badge, Card, DecisionBadge, ErrorBox, PageHeader, Spinner, Table } from "../components/ui";
 import { api } from "../lib/api";
 import { dt } from "../lib/format";
 
@@ -15,9 +15,10 @@ export default function Overrides() {
         actions={(["PENDING", "DECIDED"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)} className={tab === t ? "btn-primary" : "btn-secondary"}>{t === "PENDING" ? "Awaiting approval" : "Decided"}</button>
         ))} />
-      <ErrorBox error={q.error} />
+      <ErrorBox error={q.error} onRetry={() => q.refetch()} />
       {tab === "PENDING" ? (
         <div className="space-y-3">
+          {q.isLoading && <Spinner />}
           {q.data?.length === 0 && <Card><p className="text-sm text-slate-500">No overrides waiting for approval.</p></Card>}
           {q.data?.map((o) => (
             <Card key={o.id} title={<Link to={`/inspections/${o.inspection_id}`} className="font-mono text-brand-600">{o.inspection_code}</Link>}
@@ -35,7 +36,7 @@ export default function Overrides() {
         </div>
       ) : (
         <Card>
-          <Table head={["Inspection", "AI → override", "Reason", "Operator", "Outcome", "Approver", "Decided"]} empty={q.data?.length === 0}>
+          <Table head={["Inspection", "AI → override", "Reason", "Operator", "Outcome", "Approver", "Decided"]} loading={q.isLoading} empty={q.data?.length === 0} emptyText="No overrides have been approved or rejected yet.">
             {q.data?.map((o) => (
               <tr key={o.id}>
                 <td className="td"><Link className="font-mono text-xs text-brand-600" to={`/inspections/${o.inspection_id}`}>{o.inspection_code}</Link></td>

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Badge, Card, ErrorBox, Hash, PageHeader, RiskBadge, Stat, Table } from "../components/ui";
+import { Badge, Card, ErrorBox, Hash, PageHeader, RiskBadge, Spinner, Stat, Table } from "../components/ui";
 import { api } from "../lib/api";
 import { ago, dt, inr } from "../lib/format";
 
@@ -22,10 +22,11 @@ export default function Explorer() {
         <Stat label="Queued events" value={Object.values(list.data?.queued ?? {}).reduce((a: number, b: any) => a + b, 0) as number}
           hint={Object.entries(list.data?.queued ?? {}).map(([k, v]) => `${k} ${v}`).join(" · ") || "nothing waiting"} />
       </div>
-      <ErrorBox error={list.error} />
+      <ErrorBox error={list.error || info.error} onRetry={() => { list.refetch(); info.refetch(); }} />
       <div className="mt-4 grid gap-4 lg:grid-cols-5">
         <Card title="Anchor batches" className="lg:col-span-3">
-          <Table head={["Batch", "Risk", "Leaves", "Insp.", "Status", "Merkle root", "Block", "Fee", "When"]} empty={list.data?.items.length === 0}>
+          <Table head={["Batch", "Risk", "Leaves", "Insp.", "Status", "Merkle root", "Block", "Fee", "When"]} loading={list.isLoading}
+            empty={list.data?.items.length === 0} emptyText="No anchor batches yet. Events wait in the queue until the anchor worker seals a batch.">
             {list.data?.items.map((b: any) => (
               <tr key={b.id} onClick={() => setSel(b.id)} className={`cursor-pointer hover:bg-slate-50 ${sel === b.id ? "bg-brand-50" : ""}`}>
                 <td className="td font-mono">#{b.id}</td>
@@ -42,7 +43,8 @@ export default function Explorer() {
           </Table>
         </Card>
         <Card title={sel ? `Batch #${sel}` : "Select a batch"} className="lg:col-span-2">
-          {!batch.data ? <p className="text-sm text-slate-500">Click a batch to see its leaves and transaction.</p> : (
+          {sel !== null && batch.isLoading ? <Spinner label="Loading batch…" /> : batch.error ? <ErrorBox error={batch.error} onRetry={() => batch.refetch()} />
+            : !batch.data ? <p className="text-sm text-slate-500">Click a batch to see its leaves and transaction.</p> : (
             <div className="space-y-3 text-sm">
               <dl className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1">
                 <dt className="text-slate-500">Root</dt><dd><Hash value={batch.data.merkle_root} /></dd>

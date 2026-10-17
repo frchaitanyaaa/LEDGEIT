@@ -42,11 +42,14 @@ export default function Reports() {
               </select></div>}
             <div><label className="label">Line (optional)</label>
               <select className="input" value={line} onChange={(e) => setLine(e.target.value)}>
-                <option value="">all</option><option>LINE-A</option><option>LINE-B</option>
+                <option value="">All lines</option><option>LINE-A</option><option>LINE-B</option>
               </select></div>
-            <button className="btn-primary w-full" onClick={() => gen.mutate()} disabled={gen.isPending}>
-              <FileCheck2 size={16} /> {gen.isPending ? "Verifying records & rendering…" : "Generate report"}
+            {rtype === "BATCH" && batches.data?.length === 0 && <p className="text-xs text-slate-500">No batches yet. Stream inspections first.</p>}
+            <button className="btn-primary w-full" onClick={() => gen.mutate()}
+              disabled={gen.isPending || types.isLoading || (rtype === "BATCH" && !batches.data?.length)}>
+              <FileCheck2 size={16} /> {gen.isPending ? "Verifying records and rendering…" : "Generate report"}
             </button>
+            <ErrorBox error={types.error || batches.error} onRetry={() => { types.refetch(); batches.refetch(); }} />
             <ErrorBox error={gen.error} />
             {gen.data && (
               <div className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 text-sm">
@@ -54,14 +57,16 @@ export default function Reports() {
                 <div>
                   <div className="font-semibold">{gen.data.verification_code}</div>
                   <div className="text-xs text-slate-500">{gen.data.inspections} records · {gen.data.summary.Verified} verified · {gen.data.summary.Failed} failed</div>
-                  <a className="text-xs text-brand-600 underline" href={`/verify/${gen.data.verification_code}`} target="_blank" rel="noreferrer">open public page</a>
+                  <a className="text-xs text-brand-600 underline" href={`/verify/${gen.data.verification_code}`} target="_blank" rel="noreferrer">Open public page</a>
                 </div>
               </div>
             )}
           </div>
         </Card>
         <Card title="Generated reports" className="lg:col-span-2">
-          <Table head={["Report", "Code", "Records", "Verified / failed", "PDF SHA-256", "Generated", ""]} empty={list.data?.length === 0}>
+          <ErrorBox error={list.error} onRetry={() => list.refetch()} />
+          <Table head={["Report", "Code", "Records", "Verified / failed", "PDF SHA-256", "Generated", ""]}
+            loading={list.isLoading} empty={list.data?.length === 0} emptyText="No reports generated yet. Pick a type on the left and generate one.">
             {list.data?.map((r) => (
               <tr key={r.id}>
                 <td className="td text-sm">{r.title}<div className="text-xs text-slate-500">{Object.values(r.params).join(" · ")}</div></td>

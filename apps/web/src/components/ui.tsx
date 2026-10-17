@@ -1,6 +1,7 @@
 import clsx from "clsx";
-import { AlertTriangle, Check, Copy, Loader2 } from "lucide-react";
+import { AlertTriangle, Check, Copy, Loader2, RotateCw } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { ApiError } from "../lib/api";
 import { STATUS_LABEL, short } from "../lib/format";
 
 export function Card({ title, actions, children, className }: { title?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string }) {
@@ -116,17 +117,38 @@ export function Empty({ children }: { children: ReactNode }) {
   return <div className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">{children}</div>;
 }
 
-export function ErrorBox({ error }: { error: unknown }) {
+/** Turns API / network failures into a sentence a plant user can act on. */
+export function errorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.status === 401) return "Your session has expired. Please sign in again.";
+    if (error.status === 403) return "Your role does not have access to this.";
+    if (error.status === 404) return error.message && error.message !== "Not Found" ? error.message : "Not found.";
+    if (error.status === 429) return "Too many requests. Wait a moment and try again.";
+    if (error.status >= 500) return `The server ran into a problem (${error.status}). Try again in a moment.`;
+    return error.message || `Request failed (${error.status}).`;
+  }
+  if (error instanceof TypeError) return "Cannot reach the LEDGEIT API. Check that the API server is running.";
+  return error instanceof Error ? error.message : String(error);
+}
+
+export function ErrorBox({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
   if (!error) return null;
-  const msg = error instanceof Error ? error.message : String(error);
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
-      <AlertTriangle size={16} className="mt-0.5 shrink-0" /> {msg}
+    <div role="alert" className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+      <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+      <span className="flex-1">{errorMessage(error)}</span>
+      {onRetry && (
+        <button type="button" onClick={onRetry} className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-rose-700 underline hover:text-rose-900">
+          <RotateCw size={12} /> Retry
+        </button>
+      )}
     </div>
   );
 }
 
-export function Table({ head, children, empty }: { head: ReactNode[]; children: ReactNode; empty?: boolean }) {
+export function Table({ head, children, empty, emptyText = "Nothing here yet.", loading }: {
+  head: ReactNode[]; children: ReactNode; empty?: boolean; emptyText?: ReactNode; loading?: boolean;
+}) {
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-slate-100">
@@ -135,7 +157,7 @@ export function Table({ head, children, empty }: { head: ReactNode[]; children: 
         </thead>
         <tbody className="divide-y divide-slate-100">{children}</tbody>
       </table>
-      {empty && <div className="p-6 text-center text-sm text-slate-500">Nothing here yet.</div>}
+      {loading ? <Spinner /> : empty && <div className="p-6 text-center text-sm text-slate-500">{emptyText}</div>}
     </div>
   );
 }

@@ -3,7 +3,7 @@ import {
   Activity, AlertOctagon, BarChart3, Blocks, Boxes, Brain, FileCheck2, Gauge, KeyRound, ListChecks, LogOut,
   ShieldCheck, UserCheck,
 } from "lucide-react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import type { Role } from "../lib/types";
 
@@ -24,6 +24,8 @@ const NAV: { to: string; label: string; icon: any; roles: Role[] }[] = [
 
 export function Layout() {
   const { user, key, logout } = useAuth();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const items = NAV.filter((n) => user && n.roles.includes(user.role));
   return (
     <div className="flex min-h-screen">
@@ -65,7 +67,8 @@ export function Layout() {
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2 md:hidden">
           <span className="font-bold">LEDGEIT</span>
-          <select className="input w-auto" value={location.pathname} onChange={(e) => (location.href = e.target.value)}>
+          <select aria-label="Go to page" className="input w-auto" value={items.find((n) => n.to !== "/" && pathname.startsWith(n.to))?.to ?? "/"}
+            onChange={(e) => navigate(e.target.value)}>
             {items.map((n) => <option key={n.to} value={n.to}>{n.label}</option>)}
           </select>
         </div>

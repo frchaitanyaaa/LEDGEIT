@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { AnchorBadge, Card, DecisionBadge, ErrorBox, Hash, PageHeader, RiskBadge, StatusBadge, Table, VerifyBadge } from "../components/ui";
 import { api } from "../lib/api";
-import { dt } from "../lib/format";
+import { STATUS_LABEL, dt } from "../lib/format";
 import type { InspectionRow } from "../lib/types";
 
 const FILTERS = {
@@ -12,6 +12,9 @@ const FILTERS = {
   status: ["", "AUTO_ACCEPTED", "PENDING_REVIEW", "PENDING_APPROVAL", "RELEASED", "REJECTED", "DISPUTED"],
   line: ["", "LINE-A", "LINE-B"],
 } as const;
+const FILTER_ALL: Record<keyof typeof FILTERS, string> = {
+  decision: "All decisions", risk: "All risk levels", status: "All statuses", line: "All lines",
+};
 
 export default function Inspections() {
   const [f, setF] = useState<Record<string, string>>({});
@@ -21,6 +24,7 @@ export default function Inspections() {
                                        limit: "50", offset: String(page * 50) });
   const r = useQuery({ queryKey: ["inspections", params.toString()], queryFn: () => api<{ total: number; items: InspectionRow[] }>(`/inspections?${params}`),
                        placeholderData: keepPreviousData, refetchInterval: 5000 });
+  const filtered = Boolean(q) || Object.values(f).some(Boolean);
   return (
     <>
       <PageHeader title="Inspections" subtitle={r.data ? `${r.data.total} sealed records` : undefined} />
@@ -29,13 +33,14 @@ export default function Inspections() {
           <input className="input w-64" placeholder="Search code, unit serial, record hash…" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} />
           {Object.entries(FILTERS).map(([k, opts]) => (
             <select key={k} className="input w-auto" value={f[k] ?? ""} onChange={(e) => { setF({ ...f, [k]: e.target.value }); setPage(0); }}>
-              {opts.map((o) => <option key={o} value={o}>{o || `all ${k}`}</option>)}
+              {opts.map((o) => <option key={o} value={o}>{o ? (k === "status" ? STATUS_LABEL[o] ?? o : o) : FILTER_ALL[k as keyof typeof FILTERS]}</option>)}
             </select>
           ))}
         </div>
-        <ErrorBox error={r.error} />
+        <ErrorBox error={r.error} onRetry={() => r.refetch()} />
         <Table head={["Inspection", "Unit", "AI", "Defect", "Conf.", "Risk", "Status", "Anchor", "Verified", "Record hash", "Inspected"]}
-          empty={r.data?.items.length === 0}>
+          loading={r.isLoading} empty={r.data?.items.length === 0}
+          emptyText={filtered ? "No inspections match these filters." : "No inspections yet. Start the edge simulator to stream sealed records."}>
           {r.data?.items.map((i) => (
             <tr key={i.id} className="hover:bg-slate-50">
               <td className="td"><Link className="font-mono text-xs text-brand-600 hover:underline" to={`/inspections/${i.id}`}>{i.inspection_code}</Link></td>
@@ -54,8 +59,8 @@ export default function Inspections() {
         </Table>
         {r.data && r.data.total > 50 && (
           <div className="mt-3 flex items-center gap-2 text-sm">
-            <button className="btn-secondary" disabled={page === 0} onClick={() => setPage(page - 1)}>Prev</button>
-            <span>page {page + 1} / {Math.ceil(r.data.total / 50)}</span>
+            <button className="btn-secondary" disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</button>
+            <span>Page {page + 1} of {Math.ceil(r.data.total / 50)}</span>
             <button className="btn-secondary" disabled={(page + 1) * 50 >= r.data.total} onClick={() => setPage(page + 1)}>Next</button>
           </div>
         )}

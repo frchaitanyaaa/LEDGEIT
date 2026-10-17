@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Radio } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Badge, Card, DecisionBadge, Hash, PageHeader, RiskBadge, StatusBadge } from "../components/ui";
+import { Badge, Card, DecisionBadge, ErrorBox, Hash, PageHeader, RiskBadge, Spinner, StatusBadge } from "../components/ui";
 import { api, getTokens } from "../lib/api";
 import { ago } from "../lib/format";
 import type { InspectionRow } from "../lib/types";
@@ -22,7 +22,7 @@ function fromRow(r: InspectionRow): FeedItem {
 
 export default function LiveFeed() {
   const [items, setItems] = useState<FeedItem[]>([]);
-  const [connected, setConnected] = useState(false);
+  const [conn, setConn] = useState<"connecting" | "live" | "reconnecting">("connecting");
   const [anchorEvents, setAnchorEvents] = useState(0);
   const seeded = useRef(false);
   const initial = useQuery({ queryKey: ["inspections", "feed-seed"], queryFn: () => api<{ items: InspectionRow[] }>("/inspections?limit=30") });
@@ -43,8 +43,8 @@ export default function LiveFeed() {
       if (!t) return;
       const proto = location.protocol === "https:" ? "wss" : "ws";
       ws = new WebSocket(`${proto}://${location.host}/api/v1/ws/feed?token=${encodeURIComponent(t.access_token)}`);
-      ws.onopen = () => setConnected(true);
-      ws.onclose = () => { setConnected(false); if (!stop) retry = setTimeout(connect, 2000); };
+      ws.onopen = () => setConn("live");
+      ws.onclose = () => { if (!stop) { setConn("reconnecting"); retry = setTimeout(connect, 2000); } };
       ws.onmessage = (m) => {
         const msg = JSON.parse(m.data);
         if (msg.type === "inspection") setItems((cur) => [msg.data as FeedItem, ...cur.filter((c) => c.inspection_id !== msg.data.inspection_id)].slice(0, 60));
@@ -58,8 +58,9 @@ export default function LiveFeed() {
   return (
     <>
       <PageHeader title="Live feed" subtitle="Inspections arrive here the moment an edge device seals and signs them."
-        actions={<Badge tone={connected ? "green" : "amber"}><Radio size={12} /> {connected ? "live" : "reconnecting…"}</Badge>} />
-      {anchorEvents > 0 && <p className="mb-3 text-xs text-slate-500">{anchorEvents} anchoring updates received</p>}
+        actions={<Badge tone={conn === "live" ? "green" : "amber"}><Radio size={12} /> {conn === "live" ? "Live" : conn === "connecting" ? "Connecting…" : "Reconnecting…"}</Badge>} />
+      <ErrorBox error={initial.error} onRetry={() => initial.refetch()} />
+      {anchorEvents > 0 && <p className="mb-3 text-xs text-slate-500">{anchorEvents} anchoring {anchorEvents === 1 ? "update" : "updates"} received</p>}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {items.map((it) => (
           <Link key={it.inspection_id} to={`/inspections/${it.inspection_id}`} className="card block p-3 transition hover:border-brand-500">
@@ -82,7 +83,10 @@ export default function LiveFeed() {
           </Link>
         ))}
       </div>
-      {items.length === 0 && <Card><p className="text-sm text-slate-500">Waiting for inspections… start the edge simulator: <code>python -m simulator --count 0</code></p></Card>}
+      {items.length === 0 && initial.isLoading && <Spinner label="Loading recent inspections…" />}
+      {items.length === 0 && !initial.isLoading && !initial.error && (
+        <Card><p className="text-sm text-slate-500">Waiting for inspections. Start the edge simulator to stream them here: <code>python -m simulator --count 50 --rate 2</code></p></Card>
+      )}
     </>
   );
 }

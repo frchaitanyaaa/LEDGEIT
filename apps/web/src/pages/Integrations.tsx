@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Badge, Card, Hash, PageHeader, Table } from "../components/ui";
+import { Badge, Card, ErrorBox, Hash, PageHeader, Table } from "../components/ui";
 import { api } from "../lib/api";
 import { ago } from "../lib/format";
 
@@ -16,17 +16,20 @@ export default function Integrations() {
   return (
     <>
       <PageHeader title="System integrations" subtitle="LEDGEIT is a verification layer on top of existing inspection systems." />
-      <Card title="Edge devices (connected)">
-        <Table head={["Device", "Line", "Type", "Public key (Ed25519)", "Inspections", "Last seen", "Status"]}>
+      <ErrorBox error={devices.error || lines.error} onRetry={() => { devices.refetch(); lines.refetch(); }} />
+      <Card title="Edge devices" className="mt-4">
+        <Table head={["Device", "Line", "Type", "Public key (Ed25519)", "Inspections", "Last seen", "Status"]}
+          loading={devices.isLoading} empty={devices.data?.length === 0} emptyText="No edge devices registered. Run the seed to create the demo devices.">
           {devices.data?.map((d) => (
             <tr key={d.id}><td className="td font-mono text-xs">{d.device_code}</td><td className="td">{d.line}</td><td className="td text-xs">{d.device_type}</td>
-              <td className="td"><Hash value={d.public_key} n={6} /></td><td className="td">{d.inspections}</td><td className="td text-xs">{ago(d.last_seen)}</td>
+              <td className="td"><Hash value={d.public_key} n={6} /></td><td className="td">{d.inspections}</td><td className="td text-xs">{d.last_seen ? ago(d.last_seen) : "never"}</td>
               <td className="td"><Badge tone={d.is_active ? "green" : "slate"}>{d.is_active ? "active" : "inactive"}</Badge></td></tr>
           ))}
         </Table>
       </Card>
       <Card title="Production line hash chains" className="mt-4">
-        <Table head={["Line", "Plant", "Events", "Head hash", "Genesis"]}>
+        <Table head={["Line", "Plant", "Events", "Head hash", "Genesis"]}
+          loading={lines.isLoading} empty={lines.data?.length === 0} emptyText="No production lines configured yet.">
           {lines.data?.map((l) => (
             <tr key={l.id}><td className="td font-medium">{l.code}</td><td className="td text-xs">{l.plant}</td><td className="td">{l.last_seq}</td>
               <td className="td"><Hash value={l.last_event_hash} n={6} /></td><td className="td"><Hash value={l.genesis_hash} n={6} /></td></tr>

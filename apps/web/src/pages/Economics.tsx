@@ -7,7 +7,7 @@ import { inr } from "../lib/format";
 export default function Economics() {
   const q = useQuery({ queryKey: ["economics"], queryFn: () => api<any>("/economics"), refetchInterval: 10000 });
   if (q.isLoading) return <Spinner />;
-  if (q.error) return <ErrorBox error={q.error} />;
+  if (q.error) return <ErrorBox error={q.error} onRetry={() => q.refetch()} />;
   const e = q.data;
   const cmp = [
     { name: "LEDGEIT (risk-adaptive batching)", inr: Number(e.batching.actual_inr) },
@@ -38,7 +38,7 @@ export default function Economics() {
           </div>
         </Card>
         <Card title="By risk level">
-          <Table head={["Risk", "Batches", "Events", "Avg batch", "Fees"]}>
+          <Table head={["Risk", "Batches", "Events", "Avg batch", "Fees"]} empty={e.by_risk.length === 0} emptyText="No batches anchored yet, so there are no fees to show.">
             {e.by_risk.map((r: any) => (
               <tr key={r.risk}><td className="td"><RiskBadge r={r.risk} /></td><td className="td">{r.batches}</td><td className="td">{r.leaves}</td>
                 <td className="td">{r.avg_batch}</td><td className="td">{inr(r.fee_inr)}</td></tr>
