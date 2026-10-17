@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "tsc -b --noEmit",
-    "test": "vitest"
+    "test": "vitest",
+    "screenshots": "node scripts/screenshots.mjs"
   },
   "dependencies": {
     "@noble/ed25519": "2.3.0",
@@ -32,6 +33,7 @@
     "autoprefixer": "10.4.20",
     "fake-indexeddb": "6.0.0",
     "jsdom": "25.0.1",
+    "playwright": "1.48.2",
     "postcss": "8.4.49",
     "tailwindcss": "3.4.15",
     "typescript": "5.6.3",

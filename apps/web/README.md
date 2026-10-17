@@ -7,7 +7,14 @@ npm ci --prefix ../../packages/proof-core/ts && npm ci
 npm run dev          # http://localhost:5173 (proxies /api to :8000, incl. the WebSocket feed)
 npx vitest run       # unit tests (in-browser verifier, key store, components)
 npm run build
+npm run screenshots  # report/PPT screenshots → docs/screenshots/ (stack running + seeded; see below)
 ```
+
+**Screenshots.** `scripts/screenshots.mjs` signs in as the demo roles and saves one full-page PNG per route to
+`docs/screenshots/` (login, every dashboard page, an inspection detail, and the public verify page of the newest
+report). Run `npx playwright install chromium` once, or set `BROWSER_CHANNEL=chrome` (or `msedge`) to use an installed
+browser. Other env: `BASE_URL` (default `http://localhost:5173`), `LEDGEIT_PASSWORD`, `OUT_DIR`. Stream some
+inspections and generate a report first so the pages have data.
 
 | Route | Page | Roles |
 |---|---|---|
