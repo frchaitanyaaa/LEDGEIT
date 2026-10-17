@@ -26,8 +26,10 @@ Tests: proof-core py 10 · proof-core ts 6 · api 48 · ai 5 · contracts 7 · w
 - [ ] **Chaitanya** — Fund an Amoy wallet from the faucet, `CHAIN=amoy AMOY_PRIVATE_KEY=… npm run deploy:amoy`,
       commit `contracts/deployments/amoy.json`, run the demo with `CHAIN=amoy`. Confirm `docker compose up` on a
       machine with Docker (compose files were written but not executed here). Branch protection + project board.
-- [ ] **Aryan** — Record the demo video, take screenshots for the report, polish copy; deploy web (Vercel) +
-      API (Render/Railway) if a live link is wanted.
+- [x] **Aryan** — Screenshots for the report: `npm run screenshots` in `apps/web` → 14 PNGs in `docs/screenshots/`.
+- [x] **Aryan** — Polish copy + empty/loading/error states on every dashboard page (see
+      `docs/progress/weekly-2026-10-17.md`).
+- [ ] **Aryan** — Record the demo video; deploy web (Vercel) + API (Render/Railway) if a live link is wanted.
 - [ ] Everyone — weekly progress logs, tag `v1.0.0` after the Amoy run.
 
 ## Deviations from the original plan (all recorded as ADRs)
