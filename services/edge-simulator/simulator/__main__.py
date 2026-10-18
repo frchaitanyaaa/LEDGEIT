@@ -6,6 +6,7 @@ Examples:
   python -m simulator --source dir:datasets/neu-det/images   # stream real NEU-DET images
   python -m simulator --replay 3                             # re-send synthetic frame #3 as a new unit (attack)
   python -m simulator --near-replay 3                        # brightened + recompressed copy of frame #3
+  python -m simulator --file datasets/demo/replay/exact.jpg  # send any image as a new unit (e.g. replay a real NEU image)
 """
 
 from __future__ import annotations
@@ -74,6 +75,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--burst", action="store_true", help="ignore --rate and send as fast as possible")
     ap.add_argument("--replay", type=int, metavar="FRAME", help="re-send synthetic frame FRAME as a new unit")
     ap.add_argument("--near-replay", type=int, metavar="FRAME", help="send a brightened/recompressed copy of FRAME")
+    ap.add_argument("--file", metavar="IMAGE", help="send this image file once as a new unit (replay attacks on real images)")
     a = ap.parse_args(argv)
 
     key = load_key(Path(a.keys_dir), a.device)
@@ -96,6 +98,12 @@ def main(argv: list[str] | None = None) -> int:
                   f"{'ALERTS=' + ','.join(b.get('alerts', [])) if b.get('alerts') else ''} [{label}]")
         else:
             print(f"  ERROR {r.status_code}: {r.text}", file=sys.stderr)
+
+    if a.file:
+        fp = Path(a.file)
+        mime = {".png": "image/png", ".bmp": "image/bmp"}.get(fp.suffix.lower(), "image/jpeg")
+        send(fp.read_bytes(), mime, f"file {fp.name}")
+        return 0
 
     if a.replay is not None or a.near_replay is not None:
         idx = a.replay if a.replay is not None else a.near_replay

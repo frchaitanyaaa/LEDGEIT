@@ -21,7 +21,7 @@ anchoring:
   max_attempts: 5
 
 replay:
-  phash_max_distance: 6
+  phash_max_distance: 6             # tuned on NEU-DET (training/tune_phash.py): closest distinct pair = 8, so 6 = 0 false alarms
   lookback_days: 30
 
 alerts:

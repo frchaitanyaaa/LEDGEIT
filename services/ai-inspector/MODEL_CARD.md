@@ -15,7 +15,7 @@ It is a baseline so the integrity pipeline can be demoed without GPU training â€
 
 ## YOLOv8 (trained on NEU-DET)
 1,800 images, 200Ã—200 grayscale, 300 per class, 80/20 split (`training/prepare_neu_det.py`, seed 42).
-Train with `training/train.py`; paste the printed metrics into `models/manifest.json`.
+Train on Colab with `training/colab_train.ipynb` (writes metrics + dates into `models/manifest.json` automatically), or locally with `training/train.py`.
 
 | Version | Base | mAP@50 | Precision | Recall |
 |---|---|---|---|---|
@@ -34,3 +34,9 @@ The heatmap PNG is hashed into the record (`explanation.heatmap_sha256`).
 - NEU-DET contains only defective images; PASS behaviour for YOLO must be validated on defect-free crops or another dataset.
 - Synthetic frames are not real steel; stub metrics do not transfer.
 - Confidence is not calibrated. Drift monitoring in the MVP = override rate + confidence trend per model version.
+
+## Replay-detection tuning (`training/tune_phash.py`, run on the real 1,800 NEU-DET images)
+Exhaustive all-pairs pHash: the closest *distinct* pair is at Hamming distance 8 (only one byte-identical duplicate pair exists in the dataset, `patches_101`/`patches_105`), so `replay.phash_max_distance: 6` gives **0 false alarms** with margin. Tampered copies caught at 6: JPEG q75/q40, brightness, contrast and noise (about 83% overall); the main miss is a 5% crop-and-resize (mean distance 11), which would need threshold >= 12 and starts colliding with genuine surfaces at 8+. Exact SHA-256 replay is always caught.
+
+## Stub on REAL NEU-DET images (`training/eval_backend.py`, 600 images, 100 per class)
+The synthetic-frame figures above do **not** transfer. On real steel: detection recall 79.7%, class accuracy 15.8%, box hit-rate (IoU>=0.5) 18.5%; per-class recall ranges from 60% (patches) to 100% (scratches). Latency p50 16 ms / p95 32 ms (about 53 img/s, CPU). Conclusion: the stub is an integrity-pipeline placeholder only; real detection quality must come from the trained YOLO models. Re-run the same script with `--kind yolo --version 1.0.0` after training and paste the table here.

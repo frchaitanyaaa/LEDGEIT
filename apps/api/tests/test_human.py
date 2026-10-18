@@ -131,3 +131,16 @@ def test_dispute_flow(client, make_device, frame, signer, auth):
     r = client.post(f"/api/v1/inspections/{iid}/dispute", headers=qm.headers,
                     json=qm.sign(payload(qm, "RESOLVE", "REJECTED")))
     assert r.status_code == 200 and r.json()["status"] == "REJECTED"
+
+
+def test_model_kpis_fp_fn_from_overrides(client, failed_inspection, signer, auth):
+    ins, qe = failed_inspection, signer("qe")
+    before = {m["id"]: m for m in client.get("/api/v1/models", headers=auth("qe")).json()}
+    r = client.post(f"/api/v1/inspections/{ins['id']}/override", headers=qe.headers,
+                    json=qe.sign(override_payload(ins, qe)))  # AI FAIL -> human PASS = false positive
+    assert r.status_code == 200, r.text
+    models = client.get("/api/v1/models", headers=auth("qe")).json()
+    m = next(x for x in models if x["inspections"] > 0)
+    assert m["false_positives"] == 1 and m["false_negatives"] == 0
+    assert m["fp_rate"] == f"{1 / m['ai_fail']:.4f}"
+    assert before[m["id"]]["false_positives"] == 0

@@ -103,6 +103,10 @@ SELECT m.id::text, m.name, m.version, m.weights_sha256, m.framework, m.dataset_v
        (SELECT count(*) FROM inspections i WHERE i.model_id=m.id) AS inspections,
        (SELECT count(*) FROM inspections i WHERE i.model_id=m.id AND i.decision='FAIL') AS ai_fail,
        (SELECT count(*) FROM overrides o JOIN inspections i ON i.id=o.inspection_id WHERE i.model_id=m.id) AS overrides,
+       (SELECT count(*) FROM overrides o JOIN inspections i ON i.id=o.inspection_id
+         WHERE i.model_id=m.id AND o.original_decision='FAIL' AND o.new_decision='PASS') AS false_positives,
+       (SELECT count(*) FROM overrides o JOIN inspections i ON i.id=o.inspection_id
+         WHERE i.model_id=m.id AND o.original_decision='PASS' AND o.new_decision='FAIL') AS false_negatives,
        (SELECT avg(i.confidence)::numeric(5,4)::text FROM inspections i WHERE i.model_id=m.id) AS avg_confidence
 FROM ai_models m LEFT JOIN users ua ON ua.id=m.approved_by LEFT JOIN users ur ON ur.id=m.registered_by
 """
@@ -115,6 +119,10 @@ def _model_out(r) -> dict:
     d["training_date"] = d["training_date"].isoformat() if d["training_date"] else None
     n = d["inspections"] or 0
     d["override_rate"] = f"{(d['overrides'] / n):.4f}" if n else None
+    # Human-derived error rates: FP = AI said FAIL, human overrode to PASS; FN = AI said PASS, human overrode to FAIL.
+    d["fp_rate"] = f"{(d['false_positives'] / d['ai_fail']):.4f}" if d["ai_fail"] else None
+    ai_pass = n - (d["ai_fail"] or 0)
+    d["fn_rate"] = f"{(d['false_negatives'] / ai_pass):.4f}" if ai_pass else None
     return d
 
 
