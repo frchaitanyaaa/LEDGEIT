@@ -11,9 +11,8 @@ Runs the whole project locally: web app, API, AI inspector, anchor worker, local
 ```
 git clone https://github.com/frchaitanyaaa/LEDGEIT.git
 cd LEDGEIT
-git checkout ishan
 ```
-`main` has no code yet. The working code is on the `ishan` branch (it also contains Aryan's and the original MVP commits). Make sure the `infra/docker-compose.yml` fix that removes MinIO is pushed to that branch, or the stack will not start.
+`main` has everything: the full MVP, the Docker setup (it runs without MinIO), and the training tools. No other branch is needed.
 
 ## 2. Configure
 ```
