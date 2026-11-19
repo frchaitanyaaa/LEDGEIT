@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Pause, Play, Radio, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { Badge, Card, DecisionBadge, ErrorBox, PageHeader, RiskBadge, Spinner, StatusBadge } from "../components/ui";
+import { useWorkspace } from "../lib/workspace";
+import { DecisionBadge, ErrorBox, RiskBadge, Spinner, StatusBadge } from "../components/ui";
 import { api, getTokens } from "../lib/api";
 import { ago } from "../lib/format";
 import type { InspectionRow } from "../lib/types";
@@ -23,6 +23,7 @@ function fromRow(r: InspectionRow): FeedItem {
 const MAX_ROWS = 40; // rows rendered; keeps the page readable however long the stream runs
 
 export default function LiveFeed() {
+  const { openInspection } = useWorkspace();
   const [items, setItems] = useState<FeedItem[]>([]);
   const [conn, setConn] = useState<"connecting" | "live" | "reconnecting">("connecting");
   const [anchorEvents, setAnchorEvents] = useState(0);
@@ -70,70 +71,65 @@ export default function LiveFeed() {
   const filtered = decision || risk || alertsOnly;
 
   return (
-    <>
-      <PageHeader title="Live feed" subtitle="Inspections appear here the moment an edge device seals and signs them."
-        actions={<>
-          <button className="btn-secondary" onClick={() => setPaused((p) => !p)}>
-            {paused ? <><Play size={14} /> Resume</> : <><Pause size={14} /> Pause</>}
-          </button>
-          <Badge tone={paused ? "slate" : conn === "live" ? "green" : "amber"}>
-            <Radio size={12} /> {paused ? "Paused" : conn === "live" ? "Live" : conn === "connecting" ? "Connecting…" : "Reconnecting…"}
-          </Badge>
-        </>} />
-      <ErrorBox error={initial.error} onRetry={() => initial.refetch()} />
-      <Card className="mb-3">
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          <select className="input w-auto" value={decision} onChange={(e) => setDecision(e.target.value)} aria-label="Decision">
-            <option value="">All decisions</option><option value="FAIL">FAIL</option><option value="PASS">PASS</option>
-          </select>
-          <select className="input w-auto" value={risk} onChange={(e) => setRisk(e.target.value)} aria-label="Risk">
-            <option value="">All risk levels</option><option value="HIGH">HIGH</option><option value="MEDIUM">MEDIUM</option><option value="LOW">LOW</option>
-          </select>
-          <label className="flex items-center gap-1.5 text-slate-600">
-            <input type="checkbox" checked={alertsOnly} onChange={(e) => setAlertsOnly(e.target.checked)} /> With alerts only
-          </label>
-          {filtered && <button className="text-xs text-brand-600 hover:underline" onClick={() => { setDecision(""); setRisk(""); setAlertsOnly(false); }}>Clear filters</button>}
-          <span className="ml-auto text-xs text-slate-500">
-            Showing latest {shown.length}{items.length > shown.length ? ` of ${items.length} received` : ""}
-            {anchorEvents > 0 && ` · ${anchorEvents} anchoring update${anchorEvents === 1 ? "" : "s"}`}
-          </span>
-        </div>
-      </Card>
-      <Card className="overflow-hidden p-0">
-        <div className="divide-y divide-slate-100">
-          {shown.map((it) => (
-            <Link key={it.inspection_id} to={`/inspections/${it.inspection_id}`}
-              className="grid grid-cols-[4.5rem,1fr,auto] items-center gap-x-3 gap-y-0.5 px-4 py-2.5 transition hover:bg-slate-50 sm:grid-cols-[4.5rem,5rem,1fr,auto]">
-              <span className="text-xs text-slate-400">{ago(it.inspected_at)}</span>
-              <span className="hidden sm:block"><DecisionBadge d={it.decision} /></span>
-              <span className="min-w-0">
-                <span className="flex items-center gap-2 text-sm">
-                  <span className="sm:hidden"><DecisionBadge d={it.decision} /></span>
-                  <span className="truncate font-medium">{it.defect_class ?? "No defect"}</span>
-                  {it.decision === "FAIL" && <span className="text-xs text-slate-500">{it.severity.toLowerCase()}</span>}
-                  <span className="text-xs text-slate-400">· {it.confidence}</span>
-                </span>
-                <span className="block truncate font-mono text-xs text-slate-400">{it.inspection_code} · {it.device}</span>
-              </span>
-              <span className="flex items-center justify-end gap-1.5">
-                {it.alerts?.length > 0 && (
-                  <span title={it.alerts.join(", ")} className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">
-                    <TriangleAlert size={12} /> {it.alerts.length}
-                  </span>
-                )}
-                {it.risk_level !== "LOW" && <RiskBadge r={it.risk_level} />}
-                <StatusBadge s={it.status} />
-              </span>
-            </Link>
+    <section className="flex h-full min-h-0 flex-col" aria-label="Live inspections">
+      <header className="flex flex-wrap items-center gap-2 border-b border-slate-200 px-4 py-2.5">
+        <h2 className="mr-1 text-sm font-semibold text-slate-900">Live line</h2>
+        <span className={"inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium " +
+          (paused ? "bg-slate-100 text-slate-700" : conn === "live" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800")}>
+          <Radio size={12} className={!paused && conn === "live" ? "animate-pulse" : ""} />
+          {paused ? "Paused" : conn === "live" ? "Live" : conn === "connecting" ? "Connecting…" : "Reconnecting…"}
+        </span>
+        <div className="ml-auto flex flex-wrap items-center gap-1.5 text-xs">
+          {([["", "All"], ["FAIL", "FAIL"], ["PASS", "PASS"]] as const).map(([v, l]) => (
+            <button key={l} onClick={() => setDecision(v)} aria-pressed={decision === v}
+              className={"rounded-full px-2.5 py-1 transition " + (decision === v ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>{l}</button>
           ))}
+          <button onClick={() => setRisk(risk ? "" : "HIGH")} aria-pressed={!!risk}
+            className={"rounded-full px-2.5 py-1 transition " + (risk ? "bg-rose-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>High risk</button>
+          <button onClick={() => setAlertsOnly((a) => !a)} aria-pressed={alertsOnly}
+            className={"rounded-full px-2.5 py-1 transition " + (alertsOnly ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>Alerts</button>
+          <button onClick={() => setPaused((p) => !p)} aria-label={paused ? "Resume" : "Pause"}
+            className="rounded-full bg-slate-100 p-1.5 text-slate-600 hover:bg-slate-200">{paused ? <Play size={14} /> : <Pause size={14} />}</button>
         </div>
-        {shown.length === 0 && initial.isLoading && <div className="p-4"><Spinner label="Loading recent inspections…" /></div>}
+      </header>
+      {initial.error ? <div className="p-3"><ErrorBox error={initial.error} onRetry={() => initial.refetch()} /></div> : null}
+      <div className="min-h-0 flex-1 divide-y divide-slate-100 overflow-y-auto">
+        {shown.map((it) => (
+          <button key={it.inspection_id} onClick={() => openInspection(it.inspection_id)}
+            className="grid w-full grid-cols-[3rem,1fr] items-center gap-x-3 gap-y-1 sm:grid-cols-[3.5rem,1fr,auto] px-4 py-2.5 text-left transition hover:bg-brand-50 focus:bg-brand-50 focus:outline-none">
+            <span className="text-xs text-slate-500">{ago(it.inspected_at)}</span>
+            <span className="min-w-0">
+              <span className="flex items-center gap-2 text-sm text-slate-900">
+                <DecisionBadge d={it.decision} />
+                <span className="truncate font-medium">{it.defect_class ?? "No defect"}</span>
+                {it.decision === "FAIL" && <span className="text-xs text-slate-500">{it.severity.toLowerCase()}</span>}
+                <span className="text-xs text-slate-500">· {it.confidence}</span>
+              </span>
+              <span className="block truncate font-mono text-xs text-slate-500">{it.inspection_code} · {it.device}</span>
+            </span>
+            <span className="col-start-2 flex flex-wrap items-center gap-1.5 sm:col-start-3 sm:justify-end">
+              {it.alerts?.length > 0 && (
+                <span title={it.alerts.join(", ")} className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">
+                  <TriangleAlert size={12} /> {it.alerts.length}
+                </span>
+              )}
+              {it.risk_level !== "LOW" && <RiskBadge r={it.risk_level} />}
+              <StatusBadge s={it.status} />
+            </span>
+          </button>
+        ))}
+        {shown.length === 0 && initial.isLoading && <div className="p-4 text-slate-500"><Spinner label="Loading recent inspections…" /></div>}
         {shown.length === 0 && !initial.isLoading && !initial.error && (
           <p className="p-4 text-sm text-slate-500">
-            {filtered && items.length > 0 ? "No inspections match these filters." : <>Waiting for inspections. Start the edge simulator to stream them here: <code>python -m simulator --count 50 --rate 2</code></>}
+            {filtered && items.length > 0 ? "No inspections match these filters." : "Waiting for inspections — the simulated cameras stream here every couple of seconds."}
           </p>
         )}
-      </Card>
-    </>
+      </div>
+      <footer className="border-t border-slate-200 px-4 py-1.5 text-xs text-slate-500">
+        Latest {shown.length}{items.length > shown.length ? ` of ${items.length}` : ""}
+        {anchorEvents > 0 && ` · ${anchorEvents} anchoring update${anchorEvents === 1 ? "" : "s"}`}
+        {filtered && <button className="ml-3 text-brand-600 hover:underline" onClick={() => { setDecision(""); setRisk(""); setAlertsOnly(false); }}>Clear filters</button>}
+      </footer>
+    </section>
   );
 }

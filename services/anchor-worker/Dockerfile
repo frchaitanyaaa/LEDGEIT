@@ -1,6 +1,6 @@
 # Build context: repository root. Reuses the API image layers (same Python packages).
 FROM python:3.11-slim
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 LEDGEIT_ROOT=/app
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 LEDGEIT_ROOT=/app PIP_DEFAULT_TIMEOUT=180 PIP_RETRIES=10
 WORKDIR /app
 COPY packages/proof-core/python packages/proof-core/python
 COPY apps/api/requirements.txt apps/api/requirements.txt

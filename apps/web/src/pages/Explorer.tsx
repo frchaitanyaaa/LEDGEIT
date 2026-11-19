@@ -1,7 +1,7 @@
+import { InspectionLink } from "../components/InspectionLink";
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { Badge, Card, ErrorBox, Hash, PageHeader, RiskBadge, Spinner, Stat, Table } from "../components/ui";
 import { api } from "../lib/api";
 import { ago, dt, inr } from "../lib/format";
@@ -58,7 +58,7 @@ export default function Explorer() {
                 {batch.data.items.map((i: any) => (
                   <tr key={i.event_id}>
                     <td className="td text-xs">{i.leaf_index}</td>
-                    <td className="td"><Link className="font-mono text-xs text-brand-600" to={`/inspections/${i.inspection_id}`}>{i.inspection_code}</Link></td>
+                    <td className="td"><InspectionLink id={i.inspection_id} className="font-mono text-xs text-brand-600">{i.inspection_code}</InspectionLink></td>
                     <td className="td text-xs">{i.line} #{i.seq} {i.event_type}</td>
                     <td className="td"><Hash value={i.leaf_hash} n={4} /></td>
                   </tr>

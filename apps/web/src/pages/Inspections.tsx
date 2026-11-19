@@ -1,6 +1,6 @@
+import { InspectionLink } from "../components/InspectionLink";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { AnchorBadge, Card, DecisionBadge, ErrorBox, Hash, PageHeader, RiskBadge, StatusBadge, Table, VerifyBadge } from "../components/ui";
 import { api } from "../lib/api";
 import { STATUS_LABEL, dt } from "../lib/format";
@@ -43,7 +43,7 @@ export default function Inspections() {
           emptyText={filtered ? "No inspections match these filters." : "No inspections yet. Start the edge simulator to stream sealed records."}>
           {r.data?.items.map((i) => (
             <tr key={i.id} className="hover:bg-slate-50">
-              <td className="td"><Link className="font-mono text-xs text-brand-600 hover:underline" to={`/inspections/${i.id}`}>{i.inspection_code}</Link></td>
+              <td className="td"><InspectionLink id={i.id} className="font-mono text-xs text-brand-600 hover:underline">{i.inspection_code}</InspectionLink></td>
               <td className="td text-xs">{i.unit_serial}</td>
               <td className="td"><DecisionBadge d={i.decision} /></td>
               <td className="td text-xs">{i.defect_class ?? "—"} <span className="text-slate-400">{i.severity !== "NONE" ? i.severity.toLowerCase() : ""}</span></td>

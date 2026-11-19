@@ -1,0 +1,12 @@
+{
+  "name": "ledgeit",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev-up.mjs",
+    "start": "node scripts/dev-up.mjs",
+    "stop": "docker compose down",
+    "logs": "docker compose logs -f --tail=100",
+    "reset": "docker compose down -v"
+  }
+}

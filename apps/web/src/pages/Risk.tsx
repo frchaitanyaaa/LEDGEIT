@@ -1,6 +1,6 @@
+import { InspectionLink } from "../components/InspectionLink";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { Badge, Card, ErrorBox, PageHeader, Stat, Table } from "../components/ui";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -49,7 +49,7 @@ export default function Risk() {
               <td className="td whitespace-nowrap text-xs text-slate-500">{dt(a.created_at)}</td>
               <td className="td"><Badge tone={SECURITY.includes(a.alert_type) ? "red" : "amber"}>{a.alert_type}</Badge></td>
               <td className="td"><Badge tone={a.severity === "HIGH" ? "red" : a.severity === "MEDIUM" ? "amber" : "slate"}>{a.severity}</Badge></td>
-              <td className="td">{a.inspection_id ? <Link className="font-mono text-xs text-brand-600" to={`/inspections/${a.inspection_id}`}>{a.inspection_code}</Link> : "—"}</td>
+              <td className="td">{a.inspection_id ? <InspectionLink id={a.inspection_id} className="font-mono text-xs text-brand-600">{a.inspection_code}</InspectionLink> : "—"}</td>
               <td className="td max-w-md text-xs text-slate-600">{detailText(a.details)}</td>
               <td className="td text-xs">{a.status.charAt(0) + a.status.slice(1).toLowerCase()}{a.resolved_by ? ` by ${a.resolved_by}` : ""}</td>
               <td className="td whitespace-nowrap">

@@ -80,7 +80,7 @@ export default function Executive() {
             Anchoring: {d.anchoring.confirmed} batches confirmed · {d.anchoring.pending} pending · last {ago(d.anchoring.last_confirmed)}
           </div>
         </Card>
-        <Card title="Open alerts" actions={<Link to="/risk" className="text-xs text-brand-600">View all</Link>}>
+        <Card title="Open alerts" actions={<Link to="/?panel=risk" className="text-xs text-brand-600">View all</Link>}>
           {d.alert_types.length === 0 ? <p className="text-sm text-slate-500">No open alerts.</p> : (
             <ul className="space-y-1.5">
               {d.alert_types.map((a: any) => (

@@ -1,0 +1,5 @@
+# Root entry point so a single command starts everything:
+#   docker compose up --build
+# The real definition lives in infra/docker-compose.yml.
+include:
+  - infra/docker-compose.yml

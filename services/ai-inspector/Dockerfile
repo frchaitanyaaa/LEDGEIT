@@ -1,5 +1,5 @@
 FROM python:3.11-slim
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_DEFAULT_TIMEOUT=180 PIP_RETRIES=10
 WORKDIR /svc
 COPY services/ai-inspector/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

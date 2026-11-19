@@ -1,6 +1,6 @@
+import { InspectionLink } from "../components/InspectionLink";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { ApprovalActions } from "../components/Actions";
 import { Badge, Card, DecisionBadge, ErrorBox, PageHeader, Spinner, Table } from "../components/ui";
 import { api } from "../lib/api";
@@ -21,7 +21,7 @@ export default function Overrides() {
           {q.isLoading && <Spinner />}
           {q.data?.length === 0 && <Card><p className="text-sm text-slate-500">No overrides waiting for approval.</p></Card>}
           {q.data?.map((o) => (
-            <Card key={o.id} title={<Link to={`/inspections/${o.inspection_id}`} className="font-mono text-brand-600">{o.inspection_code}</Link>}
+            <Card key={o.id} title={<InspectionLink id={o.inspection_id} className="font-mono text-brand-600">{o.inspection_code}</InspectionLink>}
               actions={<span className="text-xs text-slate-500">{dt(o.created_at)}</span>}>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-1 text-sm">
@@ -39,7 +39,7 @@ export default function Overrides() {
           <Table head={["Inspection", "AI → override", "Reason", "Operator", "Outcome", "Approver", "Decided"]} loading={q.isLoading} empty={q.data?.length === 0} emptyText="No overrides have been approved or rejected yet.">
             {q.data?.map((o) => (
               <tr key={o.id}>
-                <td className="td"><Link className="font-mono text-xs text-brand-600" to={`/inspections/${o.inspection_id}`}>{o.inspection_code}</Link></td>
+                <td className="td"><InspectionLink id={o.inspection_id} className="font-mono text-xs text-brand-600">{o.inspection_code}</InspectionLink></td>
                 <td className="td"><DecisionBadge d={o.original_decision} /> → <DecisionBadge d={o.new_decision} /></td>
                 <td className="td text-xs"><Badge>{o.reason_code}</Badge> {o.reason_text}</td>
                 <td className="td text-xs">{o.operator}</td>

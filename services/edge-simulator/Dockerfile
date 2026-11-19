@@ -1,5 +1,5 @@
 FROM python:3.11-slim
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_DEFAULT_TIMEOUT=180 PIP_RETRIES=10
 WORKDIR /app/services/edge-simulator
 COPY packages/proof-core/python /proof-core
 COPY services/edge-simulator/requirements.txt .

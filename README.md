@@ -46,11 +46,9 @@ status: [`docs/STATUS.md`](docs/STATUS.md)
 
 ### Option A — Docker
 ```bash
-cp .env.example .env
-make up                                         # postgres, minio, hardhat, api, worker, ai-inspector, web
-docker compose -f infra/docker-compose.yml exec api python -m ledgeit_api.db.seed
-docker compose -f infra/docker-compose.yml --profile demo up edge-simulator   # stream inspections
-open http://localhost:5173
+npm run dev                      # = docker compose up --build, waits, prints the links. Or:
+docker compose up --build        # one command: db, chain, seed, api, worker, AI, 2 simulated cameras, web
+# open http://localhost:5173     (stop with: docker compose down; wipe data with: docker compose down -v)
 ```
 
 ### Option B — native (no Docker; Postgres 16 + Python 3.11+ + Node 20)

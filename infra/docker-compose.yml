@@ -29,8 +29,31 @@ services:
     build: ../contracts
     ports: ["8545:8545"]
 
+  # One-shot bootstrap: migrate, seed demo data + device keys, deploy the anchor contract.
+  # Everything else waits for it to finish, so `docker compose up` needs no manual steps.
+  init:
+    build: { context: .., dockerfile: apps/api/Dockerfile }
+    image: ledgeit-api
+    environment: *app-env
+    command:
+      - sh
+      - -c
+      - >
+        python -m ledgeit_api.db.migrate &&
+        python -m ledgeit_api.db.seed &&
+        { [ "$$CHAIN" != "local" ] || python -c "from ledgeit_api.chain.client import ensure_local_deployment as d; print('anchor contract', d())"; }
+    volumes:
+      - ../contracts/deployments:/app/contracts/deployments
+      - ../services/edge-simulator/keys:/app/services/edge-simulator/keys
+      - ../services/ai-inspector/models:/app/services/ai-inspector/models:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+      hardhat: { condition: service_started }
+    restart: "no"
+
   api:
     build: { context: .., dockerfile: apps/api/Dockerfile }
+    image: ledgeit-api
     environment: *app-env
     ports: ["8000:8000"]
     volumes:
@@ -40,12 +63,20 @@ services:
       - evidence:/data/evidence
     depends_on:
       postgres: { condition: service_healthy }
+      init: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 3s
+      retries: 30
+    restart: unless-stopped
 
   anchor-worker:
     build: { context: .., dockerfile: services/anchor-worker/Dockerfile }
     environment: *app-env
     volumes: ["../contracts/deployments:/app/contracts/deployments"]
-    depends_on: [api, hardhat]
+    depends_on:
+      api: { condition: service_healthy }
+      hardhat: { condition: service_started }
     restart: unless-stopped
 
   ai-inspector:
@@ -53,18 +84,39 @@ services:
     environment: { MODEL_BACKEND: "${MODEL_BACKEND:-stub}" }
     ports: ["8001:8001"]
     volumes: ["../services/ai-inspector/models:/svc/models"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8001/health')"]
+      interval: 3s
+      retries: 30
+    restart: unless-stopped
 
-  edge-simulator:
+  # Two simulated edge cameras stream signed inspections forever (set --count N to limit).
+  edge-simulator-a:
     build: { context: .., dockerfile: services/edge-simulator/Dockerfile }
-    profiles: ["demo"]
-    environment: { API_URL: "http://api:8000", AI_INSPECTOR_URL: "http://ai-inspector:8001" }
+    command: ["--device", "CAM-A-01", "--count", "0", "--rate", "0.5"]
+    environment: &sim-env { API_URL: "http://api:8000", AI_INSPECTOR_URL: "http://ai-inspector:8001" }
     volumes: ["../services/edge-simulator/keys:/app/services/edge-simulator/keys:ro"]
-    depends_on: [api, ai-inspector]
+    depends_on:
+      api: { condition: service_healthy }
+      ai-inspector: { condition: service_healthy }
+    restart: unless-stopped
+
+  edge-simulator-b:
+    build: { context: .., dockerfile: services/edge-simulator/Dockerfile }
+    command: ["--device", "CAM-B-01", "--count", "0", "--rate", "0.5"]
+    environment: *sim-env
+    volumes: ["../services/edge-simulator/keys:/app/services/edge-simulator/keys:ro"]
+    depends_on:
+      api: { condition: service_healthy }
+      ai-inspector: { condition: service_healthy }
+    restart: unless-stopped
 
   web:
     build: { context: .., dockerfile: apps/web/Dockerfile }
     ports: ["5173:80"]
-    depends_on: [api]
+    depends_on:
+      api: { condition: service_healthy }
+    restart: unless-stopped
 
 volumes:
   pgdata:

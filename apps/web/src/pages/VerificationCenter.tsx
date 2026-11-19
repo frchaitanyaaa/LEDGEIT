@@ -1,7 +1,8 @@
+import { InspectionLink } from "../components/InspectionLink";
+import { useWorkspace } from "../lib/workspace";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import { Badge, Card, ErrorBox, PageHeader, Stat, Table, VerifyBadge } from "../components/ui";
 import { api } from "../lib/api";
 import { dt } from "../lib/format";
@@ -10,7 +11,7 @@ const CHECKS = ["evidence", "model", "signature", "chain", "anchor"];
 
 export default function VerificationCenter() {
   const qc = useQueryClient();
-  const nav = useNavigate();
+  const { openInspection } = useWorkspace();
   const [line, setLine] = useState("");
   const [code, setCode] = useState("");
   const history = useQuery({ queryKey: ["verifications"], queryFn: () => api<any[]>("/verifications?limit=100"), refetchInterval: 5000 });
@@ -28,7 +29,7 @@ export default function VerificationCenter() {
           <button className="btn-primary" onClick={() => run.mutate()} disabled={run.isPending}><ShieldCheck size={16} /> {run.isPending ? "Verifying…" : "Verify latest 100"}</button>
         </>} />
       <Card className="mb-4">
-        <form className="flex flex-wrap items-end gap-2" onSubmit={(e) => { e.preventDefault(); if (code.trim()) nav(`/inspections/${code.trim()}`); }}>
+        <form className="flex flex-wrap items-end gap-2" onSubmit={(e) => { e.preventDefault(); if (code.trim()) openInspection(code.trim()); }}>
           <div className="flex-1"><label className="label">Verify one record</label>
             <input className="input" placeholder="Inspection code (INS-…) or id" value={code} onChange={(e) => setCode(e.target.value)} /></div>
           <button className="btn-secondary" disabled={!code.trim()}>Open</button>
@@ -49,7 +50,7 @@ export default function VerificationCenter() {
           {history.data?.map((v) => (
             <tr key={v.id}>
               <td className="td whitespace-nowrap text-xs text-slate-500">{dt(v.verified_at)}</td>
-              <td className="td"><Link className="font-mono text-xs text-brand-600" to={`/inspections/${v.inspection_id}`}>{v.inspection_code}</Link></td>
+              <td className="td"><InspectionLink id={v.inspection_id} className="font-mono text-xs text-brand-600">{v.inspection_code}</InspectionLink></td>
               <td className="td"><VerifyBadge v={v.result} /></td>
               {CHECKS.map((c) => (
                 <td key={c} className="td"><Badge tone={v.checks[c] === "PASS" ? "green" : v.checks[c] === "FAIL" ? "red" : "amber"}>{v.checks[c]}</Badge></td>

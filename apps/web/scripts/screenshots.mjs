@@ -17,7 +17,7 @@ const VIEWPORT = { width: 1440, height: 900 };
 
 // [file name, path, user]. Each role sees the pages it would use in the demo.
 const PAGES = [
-  ["executive", "/", "qm"],
+  ["executive", "/?panel=analytics", "qm"],
   ["live-feed", "/feed", "qe"],
   ["inspections", "/inspections", "qe"],
   ["overrides", "/overrides", "qm"],

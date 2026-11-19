@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
 import { ApprovalActions, DisputeActions, ReviewActions } from "../components/Actions";
 import { EvidenceViewer } from "../components/EvidenceViewer";
 import { Timeline } from "../components/Timeline";
@@ -10,8 +9,7 @@ import { api } from "../lib/api";
 import { dt } from "../lib/format";
 import type { InspectionDetail as Detail, TimelineEvent, VerifyOut } from "../lib/types";
 
-export default function InspectionDetail() {
-  const { id } = useParams();
+export default function InspectionDetail({ id }: { id: string }) {
   const qc = useQueryClient();
   const ins = useQuery({ queryKey: ["inspection", id], queryFn: () => api<Detail>(`/inspections/${id}`), refetchInterval: 4000 });
   const tl = useQuery({ queryKey: ["timeline", id], queryFn: () => api<TimelineEvent[]>(`/inspections/${id}/timeline`), refetchInterval: 4000 });
@@ -83,7 +81,7 @@ export default function InspectionDetail() {
               </ul>
             </Card>
           )}
-          <Card title="Event timeline (hash-chained)" actions={<Link to={`/verify/${d.inspection_code}`} className="text-xs text-brand-600">public verify page ↗</Link>}>
+          <Card title="Event timeline (hash-chained)" actions={<a href={`/verify/${d.inspection_code}`} target="_blank" rel="noreferrer" className="text-xs text-brand-600">public verify page ↗</a>}>
             {tl.data ? <Timeline events={tl.data} /> : <Spinner />}
           </Card>
         </div>
