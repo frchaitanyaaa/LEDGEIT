@@ -1,14 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { KeyRound, LogOut, Moon, Sun } from "lucide-react";
+import { GraduationCap, KeyRound, LogOut, Moon, Sun } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { Sheet } from "../components/Sheet";
+import { Tour } from "../components/Tour";
 import { Spinner } from "../components/ui";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { ago, pct } from "../lib/format";
 import { useTheme } from "../lib/theme";
+import { useTour } from "../lib/tour";
 import { PANELS, useWorkspace } from "../lib/workspace";
 import InspectionDetail from "./InspectionDetail";
 import LiveFeed from "./LiveFeed";
@@ -40,7 +42,7 @@ function Kpi({ label, value, tone, onClick }: { label: string; value: React.Reac
   );
 }
 
-function TopBar() {
+function TopBar({ tourOn, onToggleTour }: { tourOn: boolean; onToggleTour: () => void }) {
   const { user, key, logout } = useAuth();
   const { openPanel } = useWorkspace();
   const { theme, toggle } = useTheme();
@@ -52,7 +54,7 @@ function TopBar() {
         <img src="/favicon.svg" className="h-7 w-7" alt="" />
         <span className="hidden text-sm font-bold tracking-wide text-brand-700 sm:block">LEDGEIT</span>
       </div>
-      <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto" aria-label="Key figures">
+      <div data-tour="kpis" className="flex min-w-0 flex-1 gap-2 overflow-x-auto" aria-label="Key figures">
         {k ? (
           <>
             <Kpi label="Inspections" value={k.inspections} />
@@ -71,6 +73,11 @@ function TopBar() {
         <span title={key ? key.publicKeyB64 : "no signing key in this browser"} className="hidden sm:block">
           <KeyRound size={15} className={key ? "text-emerald-600" : "text-amber-600"} />
         </span>
+        <button data-tour="tutorial" onClick={onToggleTour} role="switch" aria-checked={tourOn} aria-label="Tutorial"
+          title={tourOn ? "Tutorial on (click to turn off)" : "Tutorial off (click to turn on and replay)"}
+          className={clsx("flex items-center gap-1 rounded-full px-2 py-1.5 text-xs", tourOn ? "bg-brand-50 text-brand-700" : "text-slate-500 hover:bg-brand-50 hover:text-brand-700")}>
+          <GraduationCap size={16} /><span className="hidden sm:inline">Tutorial {tourOn ? "on" : "off"}</span>
+        </button>
         <button onClick={toggle} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} title={theme === "dark" ? "Light mode" : "Dark mode"}
           className="rounded-full p-2 text-slate-500 hover:bg-brand-50 hover:text-brand-700">{theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}</button>
         <button onClick={logout} aria-label="Sign out" title="Sign out" className="rounded-full p-2 text-slate-500 hover:bg-brand-50 hover:text-brand-700"><LogOut size={16} /></button>
@@ -153,7 +160,7 @@ function Dock() {
           const active = panel?.id === id;
           return (
             <li key={id} className="shrink-0">
-              <button onClick={() => (active ? closeAll() : openPanel(id))} aria-current={active ? "page" : undefined}
+              <button data-tour={`dock-${id}`} onClick={() => (active ? closeAll() : openPanel(id))} aria-current={active ? "page" : undefined}
                 className={clsx("flex w-[4.5rem] flex-col items-center gap-0.5 rounded-xl px-2 py-1.5 text-[11px] transition",
                   active ? "bg-brand-600 text-white" : "text-slate-500 hover:bg-brand-50 hover:text-brand-700")}>
                 <Icon size={19} />{label}
@@ -169,12 +176,13 @@ function Dock() {
 export default function Workspace() {
   const { panel, inspection, closeTop } = useWorkspace();
   const View = panel ? PANEL_VIEW[panel.id] : null;
+  const tour = useTour();
   return (
     <div className="app-bg flex h-dvh flex-col overflow-hidden text-slate-800">
-      <TopBar />
+      <TopBar tourOn={tour.enabled} onToggleTour={() => tour.setEnabled(!tour.enabled)} />
       <main className="grid min-h-0 flex-1 lg:grid-cols-[1fr,22rem]">
-        <div className="min-h-0 border-slate-200 lg:border-r"><LiveFeed /></div>
-        <aside className="hidden min-h-0 lg:block" aria-label="Overview"><Overview /></aside>
+        <div data-tour="feed" className="min-h-0 border-slate-200 lg:border-r"><LiveFeed /></div>
+        <aside data-tour="overview" className="hidden min-h-0 lg:block" aria-label="Overview"><Overview /></aside>
       </main>
       <Dock />
       {panel && View && (
@@ -182,6 +190,7 @@ export default function Workspace() {
           <Suspense fallback={<Spinner />}><View /></Suspense>
         </Sheet>
       )}
+      {tour.running && <Tour onClose={tour.finish} onDisable={() => tour.setEnabled(false)} />}
       {inspection && (
         <Sheet title="Inspection" level={2} onClose={closeTop}>
           <InspectionDetail id={inspection} />

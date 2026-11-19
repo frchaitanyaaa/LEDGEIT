@@ -45,6 +45,8 @@ async function shot(page, name) {
 
 async function login(browser, user) {
   const ctx = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+  // The first-visit tutorial would cover the screen; mark it as seen.
+  await ctx.addInitScript(() => localStorage.setItem("ledgeit-tour", JSON.stringify({ enabled: true, seen: true })));
   const page = await ctx.newPage();
   await page.goto(`${BASE}/login`);
   await page.fill("#email", `${user}@ledgeit.dev`);

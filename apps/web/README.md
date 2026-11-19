@@ -40,3 +40,7 @@ redirect to the matching panel. Code: `pages/Workspace.tsx`, `components/Sheet.t
 
 Signing: on first login the browser creates an Ed25519 key in IndexedDB (`src/lib/keys.ts`) and registers the
 public key. Every human action signs `SHA256(JCS(payload))` using the shared `packages/proof-core/ts`.
+
+## First-visit tutorial
+
+A new browser gets a guided tour on first load. It highlights the key figures, live line, overview and each tool in the bottom dock for the user's role. Arrow keys move through it, Esc closes it. The **Tutorial on/off** switch in the top bar replays it or turns it off for good (stored in `localStorage` under `ledgeit-tour`). Code: `src/components/Tour.tsx`, `src/lib/tour.ts`. To reset, clear that key.
